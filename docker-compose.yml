@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   auth_db:
     image: mysql:8.0
@@ -10,9 +8,51 @@ services:
       MYSQL_USER: auth_user
       MYSQL_PASSWORD: auth_password
     ports:
-      - "3306:3306"
+      - "3309:3306"
     volumes:
       - auth_db_data:/var/lib/mysql
+      - ./Scripts.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - cinema_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  cinema_db:
+    image: mysql:8.0
+    container_name: cinema_db_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: cinema_db
+      MYSQL_USER: auth_user
+      MYSQL_PASSWORD: auth_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - cinema_db_data:/var/lib/mysql
+      - ./Scripts.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - cinema_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  order_db:
+    image: mysql:8.0
+    container_name: order_db_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: order_db
+      MYSQL_USER: auth_user
+      MYSQL_PASSWORD: auth_password
+    ports:
+      - "3308:3306"
+    volumes:
+      - order_db_data:/var/lib/mysql
       - ./Scripts.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - cinema_network
@@ -37,8 +77,40 @@ services:
     networks:
       - cinema_network
 
+  cinema_service:
+    build:
+      context: ./cinema_service
+    container_name: cinema_service
+    environment:
+      DATABASE_URL: mysql+pymysql://auth_user:auth_password@cinema_db:3306/cinema_db
+      SQLALCHEMY_DATABASE_URI: mysql+pymysql://auth_user:auth_password@cinema_db:3306/cinema_db
+    ports:
+      - "5001:5000"
+    depends_on:
+      cinema_db:
+        condition: service_healthy
+    networks:
+      - cinema_network
+
+  order_service:
+    build:
+      context: ./order_service
+    container_name: order_service
+    environment:
+      DATABASE_URL: mysql+pymysql://auth_user:auth_password@order_db:3306/order_db
+      SQLALCHEMY_DATABASE_URI: mysql+pymysql://auth_user:auth_password@order_db:3306/order_db
+    ports:
+      - "5002:5000"
+    depends_on:
+      order_db:
+        condition: service_healthy
+    networks:
+      - cinema_network
+
 volumes:
   auth_db_data:
+  cinema_db_data:
+  order_db_data:
 
 networks:
   cinema_network:
