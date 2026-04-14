@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  auth_db:
+    image: mysql:8.0
+    container_name: auth_db_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: auth_db
+      MYSQL_USER: auth_user
+      MYSQL_PASSWORD: auth_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - auth_db_data:/var/lib/mysql
+      - ./Scripts.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - cinema_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  auth_service:
+    build:
+      context: ./auth_service
+    container_name: auth_service
+    environment:
+      DATABASE_URL: mysql+pymysql://auth_user:auth_password@auth_db:3306/auth_db
+      SQLALCHEMY_DATABASE_URI: mysql+pymysql://auth_user:auth_password@auth_db:3306/auth_db
+    ports:
+      - "5000:5000"
+    depends_on:
+      auth_db:
+        condition: service_healthy
+    networks:
+      - cinema_network
+
+volumes:
+  auth_db_data:
+
+networks:
+  cinema_network:
+    driver: bridge

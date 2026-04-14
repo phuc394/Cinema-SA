@@ -21,5 +21,4 @@ pyms:
     APPLICATION_ROOT : /auth_service
     SQLALCHEMY_TRACK_MODIFICATIONS: true
     SECRET_KEY: "gjr39dkjn344_!67#"
-    DATABASE: db.sqlite3
-    SQLALCHEMY_DATABASE_URI: sqlite:////microservice/database/db.sqlite3
+    SQLALCHEMY_DATABASE_URI: mysql+pymysql://auth_user:auth_password@auth_db:3306/auth_db
