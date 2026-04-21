@@ -4,3 +4,5 @@ py-ms[all]==2.8.0
 marshmallow==3.10.0
 marshmallow-sqlalchemy==0.24.2
 PyMySQL>=1.1.1
+grpcio>=1.71.0
+grpcio-tools>=1.71.0

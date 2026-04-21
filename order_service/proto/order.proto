@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package cinema.order.v1;
+
+service OrderService {
+  rpc CreateOrder(CreateOrderRequest) returns (OrderResponse);
+  rpc GetOrder(GetOrderRequest) returns (OrderResponse);
+  rpc ListOrdersByUser(ListOrdersByUserRequest) returns (ListOrdersByUserResponse);
+  rpc CancelOrder(CancelOrderRequest) returns (OrderResponse);
+  rpc StreamOrderStatus(StreamOrderStatusRequest) returns (stream OrderStatusEvent);
+}
+
+message CreateOrderRequest {
+  string user_id = 1;
+  string showtime_id = 2;
+  repeated string seat_ids = 3;
+  string payment_method = 4;
+}
+
+message GetOrderRequest {
+  string order_id = 1;
+}
+
+message ListOrdersByUserRequest {
+  string user_id = 1;
+}
+
+message ListOrdersByUserResponse {
+  repeated Order orders = 1;
+}
+
+message CancelOrderRequest {
+  string order_id = 1;
+  string reason = 2;
+}
+
+message StreamOrderStatusRequest {
+  string order_id = 1;
+}
+
+message OrderStatusEvent {
+  string order_id = 1;
+  string status = 2;
+  string message = 3;
+  int64 event_time_epoch = 4;
+}
+
+message OrderResponse {
+  Order order = 1;
+}
+
+message Order {
+  string id = 1;
+  string user_id = 2;
+  string showtime_id = 3;
+  repeated string seat_ids = 4;
+  string status = 5;
+  int64 total_price = 6;
+  string currency = 7;
+  int64 created_at_epoch = 8;
+}
