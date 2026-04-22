@@ -1,6 +1,7 @@
 # API Gateway (Flask)
 
 Simple Flask API gateway for routing to:
+
 - Auth service
 - Cinema service
 - Order service
@@ -32,3 +33,9 @@ python app.py
 - `GET http://localhost:8080/auth/health`
 - `GET http://localhost:8080/cinema/health`
 - `GET http://localhost:8080/order/health`
+
+## Docker Compose (project root)
+
+```bash
+docker compose -f microservices/docker-compose.yml up --build
+```

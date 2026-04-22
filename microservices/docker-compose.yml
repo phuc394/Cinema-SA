@@ -109,7 +109,7 @@ services:
 
   api_gateway:
     build:
-      context: ./api_gateway
+      context: ../api_gateway
     container_name: api_gateway
     environment:
       AUTH_SERVICE_URL: http://auth_service:5000

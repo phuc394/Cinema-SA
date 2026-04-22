@@ -54,6 +54,11 @@ class OrderServiceStub(object):
                 request_serializer=order__pb2.CancelOrderRequest.SerializeToString,
                 response_deserializer=order__pb2.OrderResponse.FromString,
                 _registered_method=True)
+        self.StreamOrderStatus = channel.unary_stream(
+                '/cinema.order.v1.OrderService/StreamOrderStatus',
+                request_serializer=order__pb2.StreamOrderStatusRequest.SerializeToString,
+                response_deserializer=order__pb2.OrderStatusEvent.FromString,
+                _registered_method=True)
 
 
 class OrderServiceServicer(object):
@@ -83,6 +88,12 @@ class OrderServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def StreamOrderStatus(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_OrderServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -105,6 +116,11 @@ def add_OrderServiceServicer_to_server(servicer, server):
                     servicer.CancelOrder,
                     request_deserializer=order__pb2.CancelOrderRequest.FromString,
                     response_serializer=order__pb2.OrderResponse.SerializeToString,
+            ),
+            'StreamOrderStatus': grpc.unary_stream_rpc_method_handler(
+                    servicer.StreamOrderStatus,
+                    request_deserializer=order__pb2.StreamOrderStatusRequest.FromString,
+                    response_serializer=order__pb2.OrderStatusEvent.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -215,6 +231,33 @@ class OrderService(object):
             '/cinema.order.v1.OrderService/CancelOrder',
             order__pb2.CancelOrderRequest.SerializeToString,
             order__pb2.OrderResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def StreamOrderStatus(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/cinema.order.v1.OrderService/StreamOrderStatus',
+            order__pb2.StreamOrderStatusRequest.SerializeToString,
+            order__pb2.OrderStatusEvent.FromString,
             options,
             channel_credentials,
             insecure,
