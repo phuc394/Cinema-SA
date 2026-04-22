@@ -28,6 +28,10 @@ BROWSER := python -c "$$BROWSER_PYSCRIPT"
 
 help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
+	@echo ""
+	@echo "Project layout:"
+	@echo "  - Service directory: microservices/auth_service"
+	@echo "  - Full stack compose: docker compose -f microservices/docker-compose.yml up --build"
 
 clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
 

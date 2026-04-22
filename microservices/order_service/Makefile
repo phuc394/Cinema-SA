@@ -28,6 +28,10 @@ BROWSER := python -c "$$BROWSER_PYSCRIPT"
 
 help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
+	@echo ""
+	@echo "Project layout:"
+	@echo "  - Service directory: microservices/order_service"
+	@echo "  - Full stack compose: docker compose -f microservices/docker-compose.yml up --build"
 
 clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
 
@@ -65,7 +69,7 @@ test-all: ## run tests on every Python version with tox
 
 coverage: ## check code coverage quickly with the default Python
 	coverage erase
-	coverage run --source cinema_service -m pytest
+	coverage run --source order_service -m pytest
 	coverage report -m
 	coverage html
 	$(BROWSER) htmlcov/index.html

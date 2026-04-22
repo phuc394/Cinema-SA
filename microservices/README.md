@@ -20,11 +20,17 @@ Streaming RPC added:
 
 - `OrderService.StreamOrderStatus` (server streaming) in `order_service/proto/order.proto`
 
-Generate Python stubs for all 3 services:
+Generate Python stubs for all 3 services (from `microservices/`):
 
 ```bash
 pip install grpcio grpcio-tools
 python generate_grpc_stubs.py
+```
+
+Run the full stack from the repository root:
+
+```bash
+docker compose -f microservices/docker-compose.yml up --build
 ```
 
 Generated files are placed into each service at:
