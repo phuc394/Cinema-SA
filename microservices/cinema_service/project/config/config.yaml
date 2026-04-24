@@ -1,0 +1,14 @@
+pyms:
+  flask:
+    app_name: "cinema-service"
+    host: "0.0.0.0"
+    port: 5001
+    debug: true
+  services:
+    database:
+      # Thay đổi root:password và localhost cho đúng cấu hình MySQL của nhóm
+      uri: "mysql+pymysql://root:password@localhost/cinema_db"
+      track_modifications: false
+  swagger:
+    # Trỏ đến file swagger.yaml mà bạn đã cung cấp
+    path: "project/swagger/swagger.yaml"

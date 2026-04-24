@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-import cinema_pb2 as cinema__pb2
+import cinema_service.project.grpc.cinema_pb2 as cinema__pb2
 
 GRPC_GENERATED_VERSION = '1.80.0'
 GRPC_VERSION = grpc.__version__
