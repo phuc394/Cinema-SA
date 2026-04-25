@@ -1,62 +1,57 @@
-import logging
-import logging.config
+import os
 
-from pyms.flask.app import Microservice
+from flask import Flask
+import pymysql
+from sqlalchemy.engine.url import make_url
+
+from project.config.settings import Config
 from project.models.init_db import db
+from project.routes.booking_routes import booking_bp
 
 
-class MyMicroservice(Microservice):
-    def init_libs(self) -> None:
 
-        db.init_app(self.application)
-        with self.application.test_request_context():
-            db.create_all()
+def _ensure_mysql_database(database_url: str) -> None:
+    url = make_url(database_url)
+    if not url.drivername.startswith("mysql") or not url.database:
+        return
 
-    def init_logger(self) -> None:
-        if not self.application.config["DEBUG"]:
-            super().init_logger()
-        else:
-            level = "DEBUG"
-            LOGGING = {
-                'version': 1,
-                'disable_existing_loggers': False,
-                'handlers': {
-                    'console': {
-                        'level': level,
-                        'class': 'logging.StreamHandler',
-                    },
-                },
-                'loggers': {
-                    '': {
-                        'handlers': ['console'],
-                        'level': level,
-                        'propagate': True,
-                    },
-                    'anyconfig': {
-                        'handlers': ['console'],
-                        'level': "WARNING",
-                        'propagate': True,
-                    },
-                    'pyms': {
-                        'handlers': ['console'],
-                        'level': "WARNING",
-                        'propagate': True,
-                    },
-                    'root': {
-                        'handlers': ['console'],
-                        'level': level,
-                        'propagate': True,
-                    },
-                }
-            }
-
-            logging.config.dictConfig(LOGGING)
+    connection = pymysql.connect(
+        host=url.host or "localhost",
+        port=url.port or 3306,
+        user=url.username,
+        password=url.password,
+        charset="utf8mb4",
+        autocommit=True,
+    )
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"CREATE DATABASE IF NOT EXISTS `{url.database}` "
+                "CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+            )
+    finally:
+        connection.close()
 
 
-def create_app() -> None:
-    """Initialize the Flask app, register blueprints and intialize all libraries like Swagger, database, the trace system...
-    return the app and the database objects.
-    :return:
-    """
-    ms = MyMicroservice(path=__file__)
-    return ms.create_app()
+def create_app() -> Flask:
+    app = Flask(__name__)
+    app.config.from_object(Config)
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
+        "DATABASE_URL",
+        Config.SQLALCHEMY_DATABASE_URI
+    )
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+    _ensure_mysql_database(app.config["SQLALCHEMY_DATABASE_URI"])
+
+    db.init_app(app)
+    app.register_blueprint(booking_bp)
+
+    @app.route("/", methods=["GET"])
+    def index() -> tuple[str, int]:
+        return "Order service is running", 200
+
+    with app.app_context():
+        db.create_all()
+
+    return app
