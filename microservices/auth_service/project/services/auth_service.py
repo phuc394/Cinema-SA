@@ -7,6 +7,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from project.models.init_db import db
 from project.models.models import User
+from project.utils.validators import validate_email, validate_password, validate_phone_number
 
 
 REVOKED_TOKEN_JTI = set()
@@ -47,7 +48,16 @@ def register_user(data):
     password = data.get("password") or ""
 
     if not full_name or not phone_number or not email or not password:
-        raise ValueError("Missing required fields")
+        raise ValueError("Missing required fields: full_name, phone_number, email, password")
+
+    # Validate email format
+    validate_email(email)
+
+    # Validate password
+    validate_password(password)
+
+    # Validate phone number
+    validate_phone_number(phone_number)
 
     existing_phone = User.query.filter_by(phone_number=phone_number).first()
     if existing_phone:
@@ -111,6 +121,12 @@ def update_profile(user_id, data):
 
     if not full_name or not phone_number or not email:
         raise ValueError("full_name, phone_number and email are required")
+
+    # Validate email format
+    validate_email(email)
+
+    # Validate phone number
+    validate_phone_number(phone_number)
 
     duplicated_phone = User.query.filter(
         User.phone_number == phone_number,

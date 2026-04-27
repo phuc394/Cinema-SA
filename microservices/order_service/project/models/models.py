@@ -1,5 +1,5 @@
-import datetime
-from sqlalchemy import Column, Integer, String, DateTime
+from datetime import datetime
+
 from project.models.init_db import db
 
 
@@ -11,7 +11,7 @@ class Booking(db.Model):
     showtime_id = db.Column(db.Integer, nullable=False)
     total_amount = db.Column(db.Float, nullable=False)
     status = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
 class BookingDetail(db.Model):
     __tablename__ = "BookingDetail"

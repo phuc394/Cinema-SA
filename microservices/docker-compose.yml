@@ -69,6 +69,8 @@ services:
     environment:
       DATABASE_URL: mysql+pymysql://auth_user:auth_password@auth_db:3306/auth_db
       SQLALCHEMY_DATABASE_URI: mysql+pymysql://auth_user:auth_password@auth_db:3306/auth_db
+      SECRET_KEY: cinema-sa-dev-secret
+      JWT_EXPIRES_IN_HOURS: 24
     ports:
       - "5000:5000"
     depends_on:
@@ -84,6 +86,8 @@ services:
     environment:
       DATABASE_URL: mysql+pymysql://auth_user:auth_password@cinema_db:3306/cinema_db
       SQLALCHEMY_DATABASE_URI: mysql+pymysql://auth_user:auth_password@cinema_db:3306/cinema_db
+      SECRET_KEY: cinema-sa-dev-secret
+      JWT_EXPIRES_IN_HOURS: 24
     ports:
       - "5001:5000"
     depends_on:
@@ -99,6 +103,9 @@ services:
     environment:
       DATABASE_URL: mysql+pymysql://auth_user:auth_password@order_db:3306/order_db
       SQLALCHEMY_DATABASE_URI: mysql+pymysql://auth_user:auth_password@order_db:3306/order_db
+      CINEMA_SERVICE_URL: http://cinema_service:5000/api
+      SECRET_KEY: cinema-sa-dev-secret
+      JWT_EXPIRES_IN_HOURS: 24
     ports:
       - "5002:5000"
     depends_on:

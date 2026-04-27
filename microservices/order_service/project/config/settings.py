@@ -3,7 +3,8 @@
 import os
 
 class Config:
-    SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret")
+    SECRET_KEY = os.getenv("SECRET_KEY", "cinema-sa-dev-secret")
+    JWT_EXPIRES_IN_HOURS = int(os.getenv("JWT_EXPIRES_IN_HOURS", "24"))
 
     # DB
     SQLALCHEMY_DATABASE_URI = os.getenv(
@@ -16,7 +17,7 @@ class Config:
     API_KEY = os.getenv("API_KEY", "my-api-key")
 
     # CINEMA SERVICE (gRPC hoặc HTTP)
-    CINEMA_SERVICE_URL = os.getenv("CINEMA_SERVICE_URL", "http://cinema-service:5001")
+    CINEMA_SERVICE_URL = os.getenv("CINEMA_SERVICE_URL", "http://localhost:5001/api")
 
     # TIMEOUT (optional)
     REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", 5))

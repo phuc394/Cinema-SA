@@ -13,12 +13,25 @@ SERVICE_MAP: Dict[str, str] = {
     "order": os.getenv("ORDER_SERVICE_URL", "http://localhost:5002"),
 }
 
+SERVICE_PREFIX_MAP: Dict[str, str] = {
+    "auth": "api/auth",
+    "cinema": "api",
+    "order": "",
+}
+
 
 def _build_target_url(service_name: str, path: str) -> str:
     base_url = SERVICE_MAP[service_name].rstrip("/")
-    if not path:
-        return base_url
-    return f"{base_url}/{path}"
+    prefix = SERVICE_PREFIX_MAP[service_name].strip("/")
+    normalized_path = path.strip("/")
+
+    url_parts = [base_url]
+    if prefix:
+        url_parts.append(prefix)
+    if normalized_path:
+        url_parts.append(normalized_path)
+
+    return "/".join(url_parts)
 
 
 def _forward_request(service_name: str, path: str = "") -> Response:

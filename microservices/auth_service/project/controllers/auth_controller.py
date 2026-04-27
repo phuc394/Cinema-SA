@@ -9,30 +9,35 @@ from project.services.auth_service import (
     register_user,
     update_profile,
 )
+from project.utils.response_handler import error_response, success_response
 
 
 def register_controller():
     data = request.get_json() or {}
     try:
         user = register_user(data)
-        return jsonify(
+        return success_response(
             {
-                "user_id": user.user_id,
-                "full_name": user.full_name,
-                "phone_number": user.phone_number,
-                "email": user.email,
-                "created_at": user.created_at.isoformat() if user.created_at else None,
-            }
-        ), 201
+                "user": {
+                    "user_id": user.user_id,
+                    "full_name": user.full_name,
+                    "phone_number": user.phone_number,
+                    "email": user.email,
+                    "created_at": user.created_at.isoformat() if user.created_at else None,
+                }
+            },
+            status_code=201,
+            message="User registered successfully"
+        )
     except ValueError as exc:
-        return jsonify({"message": str(exc)}), 400
+        return error_response(str(exc), 400)
 
 
 def login_controller():
     data = request.get_json() or {}
     try:
         user, role, token = login_user(data)
-        return jsonify(
+        return success_response(
             {
                 "token": token,
                 "role": role,
@@ -42,12 +47,14 @@ def login_controller():
                     "phone_number": user.phone_number,
                     "email": user.email,
                 },
-            }
-        ), 200
+            },
+            status_code=200,
+            message="Login successful"
+        )
     except ValueError as exc:
-        return jsonify({"message": str(exc)}), 400
+        return error_response(str(exc), 400)
     except PermissionError as exc:
-        return jsonify({"message": str(exc)}), 401
+        return error_response(str(exc), 401)
 
 
 @token_required

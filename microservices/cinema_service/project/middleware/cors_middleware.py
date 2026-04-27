@@ -1,5 +1,11 @@
-from flask_cors import CORS
+from flask import Flask, Response, request
 
-def init_cors(app):
-    # Cho phép React (thường chạy ở port 3000) gọi vào Flask (port 5001)
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+
+def init_cors(app: Flask) -> None:
+    @app.after_request
+    def add_cors_headers(response: Response) -> Response:
+        if request.path.startswith("/api/"):
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+        return response
