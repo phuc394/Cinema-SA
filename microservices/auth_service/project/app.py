@@ -1,62 +1,20 @@
-import logging
-import logging.config
+from flask import Flask
 
-from pyms.flask.app import Microservice
+from project.config.settings import Config
 from project.models.init_db import db
 
 
-class MyMicroservice(Microservice):
-    def init_libs(self) -> None:
+def create_app() -> Flask:
+    app = Flask(__name__)
+    app.config.from_object(Config)
 
-        db.init_app(self.application)
-        with self.application.test_request_context():
-            db.create_all()
+    db.init_app(app)
 
-    def init_logger(self) -> None:
-        if not self.application.config["DEBUG"]:
-            super().init_logger()
-        else:
-            level = "DEBUG"
-            LOGGING = {
-                'version': 1,
-                'disable_existing_loggers': False,
-                'handlers': {
-                    'console': {
-                        'level': level,
-                        'class': 'logging.StreamHandler',
-                    },
-                },
-                'loggers': {
-                    '': {
-                        'handlers': ['console'],
-                        'level': level,
-                        'propagate': True,
-                    },
-                    'anyconfig': {
-                        'handlers': ['console'],
-                        'level': "WARNING",
-                        'propagate': True,
-                    },
-                    'pyms': {
-                        'handlers': ['console'],
-                        'level': "WARNING",
-                        'propagate': True,
-                    },
-                    'root': {
-                        'handlers': ['console'],
-                        'level': level,
-                        'propagate': True,
-                    },
-                }
-            }
+    @app.route("/", methods=["GET"])
+    def index() -> tuple[dict, int]:
+        return {"message": "Auth service is running"}, 200
 
-            logging.config.dictConfig(LOGGING)
+    with app.app_context():
+        db.create_all()
 
-
-def create_app() -> None:
-    """Initialize the Flask app, register blueprints and intialize all libraries like Swagger, database, the trace system...
-    return the app and the database objects.
-    :return:
-    """
-    ms = MyMicroservice(path=__file__)
-    return ms.create_app()
+    return app

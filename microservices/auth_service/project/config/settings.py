@@ -2,7 +2,7 @@ import os
 
 
 class Config:
-    SECRET_KEY = os.getenv("SECRET_KEY", "gjr39dkjn344_!67#")
+    SECRET_KEY = os.getenv("SECRET_KEY", "cinema-sa-dev-secret")
     SQLALCHEMY_DATABASE_URI = os.getenv(
         "DATABASE_URL",
         "mysql+pymysql://auth_user:123456@127.0.0.1:3306/auth_db",

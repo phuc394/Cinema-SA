@@ -35,7 +35,6 @@ def token_required(func):
 
         g.current_user_id = payload.get("sub")
         g.current_role = payload.get("role", "USER")
-        g.current_token = token
         return func(*args, **kwargs)
 
     return decorated
