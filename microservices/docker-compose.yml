@@ -1,7 +1,6 @@
 services:
   auth_db:
     image: mysql:8.0
-    container_name: auth_db_mysql
     environment:
       MYSQL_ROOT_PASSWORD: root_password
       MYSQL_DATABASE: auth_db
@@ -22,7 +21,6 @@ services:
 
   cinema_db:
     image: mysql:8.0
-    container_name: cinema_db_mysql
     environment:
       MYSQL_ROOT_PASSWORD: root_password
       MYSQL_DATABASE: cinema_db
@@ -43,7 +41,6 @@ services:
 
   order_db:
     image: mysql:8.0
-    container_name: order_db_mysql
     environment:
       MYSQL_ROOT_PASSWORD: root_password
       MYSQL_DATABASE: order_db
@@ -65,7 +62,6 @@ services:
   auth_service:
     build:
       context: ./auth_service
-    container_name: auth_service
     environment:
       DATABASE_URL: mysql+pymysql://auth_user:auth_password@auth_db:3306/auth_db
       SQLALCHEMY_DATABASE_URI: mysql+pymysql://auth_user:auth_password@auth_db:3306/auth_db
@@ -82,7 +78,6 @@ services:
   cinema_service:
     build:
       context: ./cinema_service
-    container_name: cinema_service
     environment:
       DATABASE_URL: mysql+pymysql://auth_user:auth_password@cinema_db:3306/cinema_db
       SQLALCHEMY_DATABASE_URI: mysql+pymysql://auth_user:auth_password@cinema_db:3306/cinema_db
@@ -99,7 +94,6 @@ services:
   order_service:
     build:
       context: ./order_service
-    container_name: order_service
     environment:
       DATABASE_URL: mysql+pymysql://auth_user:auth_password@order_db:3306/order_db
       SQLALCHEMY_DATABASE_URI: mysql+pymysql://auth_user:auth_password@order_db:3306/order_db
@@ -117,7 +111,6 @@ services:
   api_gateway:
     build:
       context: ../api_gateway
-    container_name: api_gateway
     environment:
       AUTH_SERVICE_URL: http://auth_service:5000
       CINEMA_SERVICE_URL: http://cinema_service:5000

@@ -1,4 +1,4 @@
-FROM python:3.14.3-alpine3.21
+FROM python:3.14-alpine3.21
 
 RUN apk add --update curl gcc g++ git libffi-dev openssl-dev python3-dev build-base linux-headers \
     && rm -rf /var/cache/apk/*
@@ -12,7 +12,7 @@ RUN chown -R python $APP_HOME
 WORKDIR $APP_HOME
 RUN pip install pipenv
 COPY Pipfile* /tmp/
-RUN cd /tmp && pipenv lock --requirements > requirements.txt
+RUN cd /tmp && pipenv requirements > requirements.txt
 RUN pip install -r /tmp/requirements.txt
 RUN pip install gevent gunicorn
 ADD . $APP_HOME
