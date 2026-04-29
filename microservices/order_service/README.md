@@ -22,13 +22,13 @@ python manage.py runserver
 Default local URL:
 
 ```bash
-http://127.0.0.1:5002/
+http://127.0.0.1:5000/
 ```
 
 Swagger UI:
 
 ```bash
-http://127.0.0.1:5002/ui/
+http://127.0.0.1:5000/ui/
 ```
 
 ## Docker
@@ -37,7 +37,7 @@ Build and run this service image from `microservices/order_service`:
 
 ```bash
 docker build -t order_service -f Dockerfile .
-docker run -d -p 5002:5000 order_service
+docker run -d -p 5000:5000 order_service
 ```
 
 Run the full stack from repository root:

@@ -1,18 +1,17 @@
-FROM python:3.14-alpine3.21
+FROM python:3.11-alpine3.21
 
 RUN apk add --update curl gcc g++ git libffi-dev openssl-dev python3-dev build-base linux-headers \
     && rm -rf /var/cache/apk/*
 
 ENV PYTHONUNBUFFERED=1 ENVIRONMENT=pre APP_HOME=/microservice/
+ENV HOME=$APP_HOME
 ENV DATABASE_DIR=database
 ENV PYMS_CONFIGMAP_FILE="${APP_HOME}config-docker.yml"
 RUN mkdir $APP_HOME && adduser -S -D -H python
 
 RUN chown -R python $APP_HOME
 WORKDIR $APP_HOME
-RUN pip install pipenv
-COPY Pipfile* /tmp/
-RUN cd /tmp && pipenv requirements > requirements.txt
+COPY requirements.txt /tmp/requirements.txt
 RUN pip install -r /tmp/requirements.txt
 RUN pip install gevent gunicorn
 ADD . $APP_HOME

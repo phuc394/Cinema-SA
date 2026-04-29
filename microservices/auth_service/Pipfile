@@ -4,6 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+Flask = "==2.2.5"
 Flask-SQLAlchemy = "==2.4.4"
 SQLAlchemy = "==1.4.3"
 py-ms = {extras = ["all"],version = "==2.7.0"}
@@ -11,6 +12,8 @@ marshmallow = "==3.8.0"
 marshmallow-sqlalchemy = ">=0.24.2"
 importlib-metadata = "==2.1.1"
 PyMySQL = ">=1.0.2"
+grpcio = ">=1.71.0"
+grpcio-tools = ">=1.71.0"
 
 [dev-packages]
 requests-mock = "*"
@@ -27,7 +30,7 @@ black = ">=20.8b1"
 mypy = ">=0.790"
 
 [requires]
-python_version = "3.14"
+python_version = "3.11"
 
 [pipenv]
 allow_prereleases = true
