@@ -24,3 +24,4 @@ class BookingDetail(db.Model):
     )
     seat_code = db.Column(db.String(10), nullable=False)
     seat_price = db.Column(db.Float, nullable=False)
+

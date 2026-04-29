@@ -2,7 +2,7 @@ import requests
 from flask import current_app
 from datetime import datetime, timedelta
 
-from project.models.models import Booking, BookingDetail, TemporarySeatLock, db
+from project.models.models import Booking, BookingDetail, db
 
 
 def _fetch_seat_map(showtime_id, access_token):
@@ -86,12 +86,8 @@ def create_booking(user_id, showtime_id, seat_codes, access_token):
                 )
             )
 
-        # Release the temporary seat locks for this user
-        TemporarySeatLock.query.filter_by(
-            showtime_id=showtime_id,
-            user_id=user_id,
-            status=1
-        ).delete()
+        # Note: Seat locks are managed by cinema service
+        # Order service only handles booking records
 
         db.session.commit()
         return booking
