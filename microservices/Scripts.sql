@@ -95,10 +95,21 @@ CREATE TABLE Showtime (
 
 
 INSERT INTO Showtime (movie_id, show_date, start_time, end_time, room_id) VALUES
-(2, '2026-03-24', '10:00:00', '12:00:00', 1),
-(4, '2026-03-24', '13:00:00', '15:00:00', 1),
-(5, '2026-03-24', '16:00:00', '18:00:00', 1),
-(7, '2026-03-24', '19:00:00', '21:00:00', 1);
+-- The Godfather (movie_id=5) - Room 1
+(5, '2026-03-24', '10:00:00', '12:30:00', 1),
+(5, '2026-03-24', '14:00:00', '16:30:00', 1),
+(5, '2026-03-24', '16:00:00', '18:30:00', 1),
+-- The Shawshank Redemption (movie_id=2) - Room 2
+(2, '2026-03-24', '11:00:00', '13:30:00', 2),
+(2, '2026-03-24', '15:00:00', '17:30:00', 2),
+(2, '2026-03-24', '19:00:00', '21:30:00', 2),
+-- Pulp Fiction (movie_id=4) - Room 3
+(4, '2026-03-24', '10:30:00', '13:00:00', 3),
+(4, '2026-03-24', '16:30:00', '19:00:00', 3),
+-- The Matrix (movie_id=7) - Room 4
+(7, '2026-03-24', '12:00:00', '14:30:00', 4),
+(7, '2026-03-24', '17:00:00', '19:30:00', 4),
+(7, '2026-03-24', '20:00:00', '22:30:00', 4);
 
 SELECT * FROM Showtime;
 
@@ -112,6 +123,7 @@ CREATE TABLE TemporarySeatLock (
     status TINYINT DEFAULT 1 COMMENT '1: Đang khóa, 0: Đã hủy/Đã đặt',
     CONSTRAINT fk_lock_showtime FOREIGN KEY (showtime_id) REFERENCES Showtime(showtime_id)
 );
+
 
 USE order_db;
 
