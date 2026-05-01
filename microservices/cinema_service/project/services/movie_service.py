@@ -65,30 +65,7 @@ class MovieService:
             TemporarySeatLock.expires_at <= now,
             TemporarySeatLock.status == 1
         ).delete()
-
-        # If user_id provided, create new locks for this user (5 minute validity)
-        if user_id:
-            # First, remove any existing locks for this user on this showtime
-            TemporarySeatLock.query.filter_by(
-                showtime_id=showtime_id,
-                user_id=user_id,
-                status=1
-            ).delete()
-
-            # Create locks for all seats
-            lock_expiry = now + timedelta(minutes=5)
-            for seat in seats:
-                seat_code = cls._seat_code(seat)
-                lock = TemporarySeatLock(
-                    showtime_id=showtime_id,
-                    seat_code=seat_code,
-                    user_id=user_id,
-                    locked_at=now,
-                    expires_at=lock_expiry,
-                    status=1
-                )
-                db.session.add(lock)
-            db.session.commit()
+        db.session.commit()
 
         # Get current locked seats
         locked_seats = {
@@ -119,3 +96,74 @@ class MovieService:
             "end_time": showtime.end_time.isoformat(),
             "seats": seat_map,
         }
+
+    @classmethod
+    def lock_seats_for_booking(cls, showtime_id, seat_codes, user_id):
+        """
+        Lock specific seats for booking. Returns True if all seats can be locked, False otherwise.
+        """
+        showtime = Showtime.query.get(showtime_id)
+        if not showtime:
+            raise ValueError("Showtime not found")
+
+        now = datetime.utcnow()
+        
+        # Clear expired locks first
+        TemporarySeatLock.query.filter(
+            TemporarySeatLock.showtime_id == showtime_id,
+            TemporarySeatLock.expires_at <= now,
+            TemporarySeatLock.status == 1
+        ).delete()
+
+        # Check if any requested seats are already locked by other users
+        existing_locks = {
+            lock.seat_code: lock.user_id
+            for lock in TemporarySeatLock.query.filter(
+                TemporarySeatLock.showtime_id == showtime_id,
+                TemporarySeatLock.seat_code.in_(seat_codes),
+                TemporarySeatLock.status == 1,
+                TemporarySeatLock.expires_at > now
+            ).all()
+        }
+
+        # Check if any seats are locked by other users
+        for seat_code in seat_codes:
+            if seat_code in existing_locks and existing_locks[seat_code] != user_id:
+                raise ValueError(f"Seat {seat_code} is locked by another user")
+
+        # Remove any existing locks for this user on the requested seats
+        TemporarySeatLock.query.filter(
+            TemporarySeatLock.showtime_id == showtime_id,
+            TemporarySeatLock.seat_code.in_(seat_codes),
+            TemporarySeatLock.user_id == user_id,
+            TemporarySeatLock.status == 1
+        ).delete()
+
+        # Create new locks for the requested seats (5 minute validity)
+        lock_expiry = now + timedelta(minutes=5)
+        for seat_code in seat_codes:
+            lock = TemporarySeatLock(
+                showtime_id=showtime_id,
+                seat_code=seat_code,
+                user_id=user_id,
+                locked_at=now,
+                expires_at=lock_expiry,
+                status=1
+            )
+            db.session.add(lock)
+
+        db.session.commit()
+        return True
+
+    @classmethod
+    def release_seat_locks(cls, showtime_id, seat_codes, user_id):
+        """
+        Release seat locks for a specific user and showtime.
+        """
+        TemporarySeatLock.query.filter(
+            TemporarySeatLock.showtime_id == showtime_id,
+            TemporarySeatLock.seat_code.in_(seat_codes),
+            TemporarySeatLock.user_id == user_id,
+            TemporarySeatLock.status == 1
+        ).delete()
+        db.session.commit()
