@@ -71,8 +71,35 @@ def list_showtimes(movie_id):
 
 @token_required
 def get_seat_map(showtime_id):
-    showtime, seat_map = MovieService.get_seat_map(showtime_id, user_id=g.current_user_id)
+    showtime, seat_map = MovieService.get_seat_map(showtime_id)
     if not showtime:
         return error_response("Showtime not found", 404)
 
     return success_response(seat_map)
+
+
+@token_required
+def lock_seats(showtime_id):
+    data = request.get_json() or {}
+    seat_codes = data.get("seat_codes", [])
+    
+    if not seat_codes:
+        return error_response("seat_codes are required", 400)
+    
+    try:
+        MovieService.lock_seats_for_booking(showtime_id, seat_codes, g.current_user_id)
+        return success_response({"message": "Seats locked successfully"})
+    except ValueError as exc:
+        return error_response(str(exc), 400)
+
+
+@token_required
+def release_seats(showtime_id):
+    data = request.get_json() or {}
+    seat_codes = data.get("seat_codes", [])
+    
+    if not seat_codes:
+        return error_response("seat_codes are required", 400)
+    
+    MovieService.release_seat_locks(showtime_id, seat_codes, g.current_user_id)
+    return success_response({"message": "Seats released successfully"})

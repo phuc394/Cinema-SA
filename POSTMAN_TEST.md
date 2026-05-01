@@ -441,7 +441,8 @@ Authorization: Bearer <TOKEN>
 - ✅ Ghế với `is_available: true` có thể được đặt
 - ✅ Ghế với `is_available: false` đã bị người khác booking hoặc bị khoá (5 phút)
 - 💾 Ghi nhớ `seat_code` (ví dụ: A1, A2) mà bạn muốn đặt
-- ⏰ Khi bạn xem bản đồ ghế, hệ thống sẽ tự động khoá ghế cho bạn trong 5 phút
+- 🔒 **NEW**: Ghế chỉ được khoá khi thực sự đặt vé, không phải khi xem bản đồ ghế
+- ⏰ Ghế được tự động giải khoá sau 5 phút nếu không hoàn thành đặt vé
 
 
 ## 2.8 Bước 7: Đặt Vé (Protected - Cần Token)
@@ -449,7 +450,7 @@ Authorization: Bearer <TOKEN>
 ### Request
 ```
 Method: POST
-URL: http://localhost:8080/bookings
+URL: http://localhost:8080/order/bookings
 Content-Type: application/json
 
 Headers:
@@ -466,7 +467,7 @@ Body:
 1. Tạo request mới: `New → Request`
 2. Name: `7. Create Booking`
 3. Method: `POST`
-4. URL: `http://localhost:8080/bookings`
+4. URL: `http://localhost:8080/order/bookings`
 5. Tab `Headers`: Thêm:
    - Key: `Authorization`
    - Value: `Bearer {{auth_token}}`
@@ -507,8 +508,10 @@ Body:
 - ✅ Phải cung cấp ít nhất 1 ghế trong `seat_codes`
 - ✅ Ghế phải tồn tại & hợp lệ
 - ✅ Ghế không được đặt lại (không được có booking trước)
-- ✅ Ghế không được bị khoá (hoặc hết hạn khoá)
+- ✅ Ghế không được bị khoá bởi người khác (hoặc hết hạn khoá)
 - ✅ Token phải hợp lệ
+- 🔒 **NEW**: Hệ thống sẽ tự động khoá ghế khi bạn đặt vé
+- ⏰ **NEW**: Ghế được giải khoá tự động nếu đặt vé thất bại
 
 ### Notes
 - ✅ **THÀNH CÔNG!** - Booking đã được tạo
@@ -523,7 +526,7 @@ Body:
 ### Request
 ```
 Method: GET
-URL: http://localhost:8080/bookings/history
+URL: http://localhost:8080/order/bookings/history
 
 Headers:
 Authorization: Bearer <TOKEN>
@@ -533,7 +536,7 @@ Authorization: Bearer <TOKEN>
 1. Tạo request mới: `New → Request`
 2. Name: `8. Get Booking History`
 3. Method: `GET`
-4. URL: `http://localhost:8080/bookings/history`
+4. URL: `http://localhost:8080/order/bookings/history`
 5. Tab `Headers`: Thêm:
    - Key: `Authorization`
    - Value: `Bearer {{auth_token}}`
@@ -576,6 +579,70 @@ Xem phim (public) → Xem giờ chiếu (public)
   → Xem ghế (có token) 
   → Đặt vé (có token, status=1) 
   → Xem lịch sử (có token)
+```
+
+---
+
+## 2.10 Bước 9: Seat Locking Endpoints (Advanced - Optional)
+
+**Note**: These endpoints are automatically called by the booking service, but can be used manually for testing.
+
+### 2.10.1 Lock Specific Seats
+
+### Request
+```
+Method: POST
+URL: http://localhost:8080/cinema/showtimes/{showtime_id}/seats/lock
+Content-Type: application/json
+
+Headers:
+Authorization: Bearer <TOKEN>
+
+Body:
+{
+  "seat_codes": ["A1", "A2"]
+}
+```
+
+### Expected Response (HTTP 200)
+```json
+{
+  "error": false,
+  "message": "Seats locked successfully"
+}
+```
+
+### Error Response (HTTP 400)
+```json
+{
+  "error": true,
+  "message": "Seat A1 is locked by another user"
+}
+```
+
+### 2.10.2 Release Seat Locks
+
+### Request
+```
+Method: POST
+URL: http://localhost:8080/cinema/showtimes/{showtime_id}/seats/release
+Content-Type: application/json
+
+Headers:
+Authorization: Bearer <TOKEN>
+
+Body:
+{
+  "seat_codes": ["A1", "A2"]
+}
+```
+
+### Expected Response (HTTP 200)
+```json
+{
+  "error": false,
+  "message": "Seats released successfully"
+}
 ```
 
 ---
@@ -1078,7 +1145,7 @@ URL: http://localhost:8080/cinema/api/movies/999
 ### Request
 ```
 Method: POST
-URL: http://localhost:8080/bookings
+URL: http://localhost:8080/order/bookings
 Content-Type: application/json
 
 Headers:
@@ -1098,7 +1165,7 @@ Body:
 1. Login User A (email: user_a@test.com)
    → Get token_A
    
-2. POST /bookings
+2. POST /order/bookings
    Authorization: Bearer token_A
    Body: {"showtime_id": 1, "seat_codes": ["A1"]}
    → HTTP 201 ✅ Booking created
@@ -1109,7 +1176,7 @@ Body:
 1. Login User B (email: user_b@test.com)
    → Get token_B
    
-2. POST /bookings
+2. POST /order/bookings
    Authorization: Bearer token_B
    Body: {"showtime_id": 1, "seat_codes": ["A1"]}
    → HTTP 400 ❌ Error
@@ -1118,7 +1185,7 @@ Body:
 ### Postman Setup - User B Try Book
 1. Name: `ERROR 10. Seat Already Booked`
 2. Method: `POST`
-3. URL: `http://localhost:8080/bookings`
+3. URL: `http://localhost:8080/order/bookings`
 4. Headers:
    - `Authorization: Bearer <USER_B_TOKEN>`
    - `Content-Type: application/json`
@@ -1146,39 +1213,34 @@ Body:
 
 ---
 
-## 3.12 Error Case 11: Seat Lock (Xem Ghế Nhiều Lần) ⏰
+## 3.12 Error Case 11: Seat Lock (Đặt Cùng Ghế) ⏰
 
 ### Scenario
-User A xem bản đồ ghế → 5 phút khoá  
-User B xem ghế → Thấy ghế bị khoá  
-
-### Request
-```
-Method: GET
-URL: http://localhost:8080/cinema/api/showtimes/1/seats
-
-Headers:
-Authorization: Bearer <USER_B_TOKEN>
-```
+User A bắt đầu đặt vé ghế A1 → Ghế A1 bị khoá 5 phút  
+User B cũng cố gắng đặt ghế A1 → Bị từ chối  
 
 ### Postman Setup
 
-#### Step 1: User A View Seats
+#### Step 1: User A Starts Booking (Locks Seat A1)
 ```bash
-1. GET /cinema/api/showtimes/1/seats
+1. POST /order/bookings
    Authorization: Bearer token_A
-   → Response: All seats is_available: false (locked by User A for 5 min)
+   Body: {"showtime_id": 1, "seat_codes": ["A1"]}
+   → Response: HTTP 201 (Booking successful)
+   Note: Seat A1 is locked during the booking process
 ```
 
-#### Step 2: User B View Seats (Immediately After)
+#### Step 2: User B Tries Same Seat (Immediately After)
 ```bash
-1. GET /cinema/api/showtimes/1/seats
+1. POST /order/bookings
    Authorization: Bearer token_B
-   → Response: All seats is_available: false (locked by User B for 5 min)
-   Note: User A's lock is replaced by User B's lock
+   Body: {"showtime_id": 1, "seat_codes": ["A1"]}
+   → Response: HTTP 400
+   Error: "Seats already booked: A1"
+   Note: User B cannot book the same seat
 ```
 
-#### Step 3: User B Try Book User A's Seats (Wait > 5 min)
+#### Step 3: Manual Seat Lock Test (Optional)
 ```bash
 1. Wait 5+ minutes
    
@@ -1198,28 +1260,34 @@ Authorization: Bearer <USER_B_TOKEN>
 
 ## Quick Test Flow
 
-### ✅ Happy Path (Thành Công)
+### Happy Path### Success Cases
 ```
-1. GET /cinema/api/movies                    (200 OK)
-2. GET /cinema/api/movies/1                  (200 OK)
-3. GET /cinema/api/movies/1/showtimes        (200 OK)
-4. POST /auth/api/auth/register              (201 Created)
-5. POST /auth/api/auth/login                 (200 OK + token)
-6. GET /cinema/api/showtimes/1/seats         (200 OK with token)
-7. POST /bookings                            (201 Created with token)
-8. GET /bookings/history                     (200 OK with token)
+1. GET /cinema/movies                              (200 OK - public)
+2. GET /cinema/movies/1                            (200 OK - public)
+3. GET /cinema/movies/1/showtimes                  (200 OK - public)
+4. POST /auth/api/auth/register                    (201 Created)
+5. POST /auth/api/auth/login                       (200 OK + token)
+6. GET /cinema/showtimes/1/seats                   (200 OK with token)
+7. POST /order/bookings                            (201 Created with token)
+8. GET /order/bookings/history                     (200 OK with token)
 ```
 
-### ❌ Error Cases
+### Error Cases
 ```
-1. GET /cinema/api/showtimes/1/seats (no token)         (401 Unauthorized)
-2. POST /bookings (no token)                            (401 Unauthorized)
-3. Register with duplicate email                        (400 Bad Request)
-4. Register with weak password                          (400 Bad Request)
-5. Register with invalid email (no @)                   (400 Bad Request)
-6. Register with invalid phone (not 10-11 digits)       (400 Bad Request)
-7. GET /cinema/api/movies/999                           (404 Not Found)
-8. POST /bookings with already booked seat              (400 Bad Request)
+1. GET /cinema/showtimes/1/seats (no token)               (401 Unauthorized)
+2. POST /order/bookings (no token)                        (401 Unauthorized)
+3. Register with duplicate email                            (400 Bad Request)
+4. Register with weak password                              (400 Bad Request)
+5. Register with invalid email (no @)                       (400 Bad Request)
+6. Register with invalid phone (not 10-11 digits)          (400 Bad Request)
+7. GET /cinema/movies/999                                  (404 Not Found)
+8. POST /order/bookings with already booked seat           (400 Bad Request)
+```
+
+### New Seat Locking Endpoints (Optional)
+```
+9. POST /cinema/showtimes/1/seats/lock              (200 OK - lock specific seats)
+10. POST /cinema/showtimes/1/seats/release           (200 OK - release seat locks)
 ```
 
 ---
