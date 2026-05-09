@@ -1,0 +1,59 @@
+.movie-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  background-color: #fafafa;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.movie-poster-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 1rem;
+}
+
+.movie-poster {
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.movie-info-container {
+  padding: 1rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.movie-title {
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.movie-genre,
+.movie-release-date,
+.movie-duration,
+.movie-description {
+  color: #666;
+  line-height: 1.6;
+}
+
+.movie-status {
+  margin-top: 0.5rem;
+}
+
+.booking-button {
+  margin-top: 1.5rem;
+  padding: 0.75rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  background-color: #1976d2;
+}
+
+.booking-button:hover {
+  background-color: #1565c0;
+}

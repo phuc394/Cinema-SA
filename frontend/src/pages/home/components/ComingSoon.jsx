@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Box, Typography, Grid, Card, CardMedia, CardContent, Chip } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './ComingSoon.css';
 
@@ -7,6 +8,7 @@ const ComingSoon = () => {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchComingSoon = async () => {
@@ -48,7 +50,7 @@ const ComingSoon = () => {
       <Grid container className="movies-grid">
         {movies.map((movie) => (
           <Grid item xs={12} sm={6} md={4} lg={3} key={movie.id}>
-            <Card className="movie-card">
+            <Card className="movie-card" onClick={() => navigate(`/movie/${movie.id}`)} style={{ cursor: 'pointer' }}>
               <CardMedia
                 component="img"
                 height="300"
