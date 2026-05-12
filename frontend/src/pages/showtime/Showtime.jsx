@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Dialog,
   DialogTitle,
@@ -11,6 +12,7 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import axios from '../../ultis/axios';
+import { isAuthenticated } from '../../utils/authUtils';
 import './Showtime.css';
 
 const Showtime = ({ open, onClose, movieId }) => {
@@ -18,6 +20,7 @@ const Showtime = ({ open, onClose, movieId }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchShowtimes = async () => {
@@ -62,6 +65,18 @@ const Showtime = ({ open, onClose, movieId }) => {
     // Convert date string like "2026-03-24" to a more readable format
     const date = new Date(dateString);
     return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
+
+  const handleShowtimeClick = (showtime) => {
+    if (!isAuthenticated()) {
+      // Store current location for redirect after login
+      navigate('/login', { 
+        state: { from: { pathname: window.location.pathname } } 
+      });
+      return;
+    }
+    // TODO: Handle actual showtime selection/booking
+    console.log('Showtime selected:', showtime);
   };
 
   return (
@@ -130,6 +145,7 @@ const Showtime = ({ open, onClose, movieId }) => {
                       label={formatTime(showtime.start_time)}
                       className="showtime-time-chip"
                       clickable
+                      onClick={() => handleShowtimeClick(showtime)}
                     />
                   ))}
                 </Box>
