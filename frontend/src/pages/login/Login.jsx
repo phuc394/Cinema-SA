@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Box, Container, TextField, Button, Typography, Link, Paper } from '@mui/material';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
-import axios from 'axios';
+import axios from '../../ultis/axios';
 import './Login.css';
 
 const Login = () => {
@@ -27,7 +27,7 @@ const Login = () => {
     setError('');
 
     try {
-      const response = await axios.post('http://localhost:5001/api/auth/login', {
+      const response = await axios.post('/auth/api/auth/login', {
         email: formData.identifier.includes('@') ? formData.identifier : undefined,
         phone_number: !formData.identifier.includes('@') ? formData.identifier : undefined,
         password: formData.password

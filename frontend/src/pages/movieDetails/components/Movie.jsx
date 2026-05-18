@@ -3,6 +3,21 @@ import { Box, Typography, Button, Grid, Chip } from '@mui/material';
 import axios from '../../../ultis/axios';
 import Showtime from '../../showtime/Showtime';
 
+const MOVIE_STATUS = {
+  now_showing: {
+    label: 'Dang chieu',
+    color: 'success',
+  },
+  coming_soon: {
+    label: 'Sap chieu',
+    color: 'info',
+  },
+  stopped: {
+    label: 'Ngung chieu',
+    color: 'error',
+  },
+};
+
 const Movie = ({ movieId }) => {
   const [movie, setMovie] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -12,11 +27,11 @@ const Movie = ({ movieId }) => {
   useEffect(() => {
     const fetchMovieDetails = async () => {
       try {
-        const response = await axios.get(`/movies/${movieId}`);
-        setMovie(response.data);
-        setLoading(false);
+        const response = await axios.get(`/cinema/api/movies/${movieId}`);
+        setMovie(response.data.movie);
       } catch {
         setError('Failed to fetch movie details');
+      } finally {
         setLoading(false);
       }
     };
@@ -48,6 +63,11 @@ const Movie = ({ movieId }) => {
     );
   }
 
+  const statusConfig = MOVIE_STATUS[movie.status] || {
+    label: 'Khong ro',
+    color: 'default',
+  };
+
   return (
     <>
       <Grid container className="movie-container">
@@ -63,27 +83,27 @@ const Movie = ({ movieId }) => {
             {movie.title}
           </Typography>
           <Typography variant="body1" className="movie-genre">
-            <strong>Thể loại:</strong> {movie.genre}
+            <strong>The loai:</strong> {movie.genre}
           </Typography>
           <Typography variant="body1" className="movie-release-date">
-            <strong>Ngày chiếu:</strong> {movie.release_date || 'TBA'}
+            <strong>Ngay chieu:</strong> {movie.release_date || 'TBA'}
           </Typography>
           <Typography variant="body1" className="movie-duration">
-            <strong>Thời lượng:</strong> {movie.duration} phút
+            <strong>Thoi luong:</strong> {movie.duration} phut
           </Typography>
           {movie.description && (
             <Typography variant="body1" className="movie-description">
-              <strong>Mô tả:</strong> {movie.description}
+              <strong>Mo ta:</strong> {movie.description}
             </Typography>
           )}
           <Box className="movie-status">
             <Chip
-              label={movie.status === 1 ? 'Đang chiếu' : movie.status === 0 ? 'Sắp chiếu' : 'Ngừng chiếu'}
-              color={movie.status === 1 ? 'success' : movie.status === 0 ? 'info' : 'error'}
+              label={statusConfig.label}
+              color={statusConfig.color}
               size="medium"
             />
           </Box>
-          {movie.status === 1 && (
+          {movie.status === 'now_showing' && (
             <Button
               variant="contained"
               color="primary"
@@ -91,7 +111,7 @@ const Movie = ({ movieId }) => {
               size="large"
               onClick={() => setShowtimeModalOpen(true)}
             >
-              Đặt Vé
+              Dat ve
             </Button>
           )}
         </Grid>

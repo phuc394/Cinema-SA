@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Box, Container, TextField, Button, Typography, Link, Paper } from '@mui/material';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
-import axios from 'axios';
+import axios from '../../ultis/axios';
 import './SignUp.css';
 
 const SignUp = () => {
@@ -29,15 +29,13 @@ const SignUp = () => {
     setError('');
 
     try {
-      const response = await axios.post('http://localhost:5001/api/auth/register', formData);
-
-      const { token, user } = response.data;
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
+      const response = await axios.post('/auth/api/auth/register', formData);
+      const { user } = response.data;
+      localStorage.setItem('pendingUser', JSON.stringify(user));
 
       // Redirect to previous page or home
-      const from = location.state?.from?.pathname || '/';
-      navigate(from, { replace: true });
+      const from = location.state?.from?.pathname;
+      navigate('/login', { replace: true, state: from ? { from: { pathname: from } } : undefined });
     } catch (err) {
       setError(err.response?.data?.message || 'Tạo tài khoản thất bại');
     }
