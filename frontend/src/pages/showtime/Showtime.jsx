@@ -27,12 +27,15 @@ const Showtime = ({ open, onClose, movieId }) => {
       setLoading(true);
       setError(null);
       try {
-        const response = await axios.get(`/movies/${movieId}/showtimes`);
-        setShowtimes(response.data);
+        const response = await axios.get(`/cinema/api/movies/${movieId}/showtimes`);
+        const showtimeList = response.data.showtimes || [];
+        setShowtimes(showtimeList);
         // Select the first date by default
-        if (response.data && response.data.length > 0) {
-          const uniqueDates = [...new Set(response.data.map(s => s.show_date))];
+        if (showtimeList.length > 0) {
+          const uniqueDates = [...new Set(showtimeList.map((s) => s.show_date))];
           setSelectedDate(uniqueDates[0]);
+        } else {
+          setSelectedDate(null);
         }
         setLoading(false);
       } catch {

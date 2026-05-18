@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Box, Typography, Grid, Card, CardMedia, CardContent, Chip } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../../../ultis/axios';
 import './ComingSoon.css';
 
 const ComingSoon = () => {
@@ -13,8 +13,8 @@ const ComingSoon = () => {
   useEffect(() => {
     const fetchComingSoon = async () => {
       try {
-        const response = await axios.get('/movies');
-        const comingSoonMovies = response.data.filter(movie => movie.status === 'coming_soon');
+        const response = await axios.get('/cinema/api/movies');
+        const comingSoonMovies = response.data.filter((movie) => movie.status === 'coming_soon');
         setMovies(comingSoonMovies);
         setLoading(false);
       } catch {

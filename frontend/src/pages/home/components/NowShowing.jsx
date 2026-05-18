@@ -13,8 +13,8 @@ const NowShowing = () => {
   useEffect(() => {
     const fetchNowShowing = async () => {
       try {
-        const response = await axios.get('/movies');
-        const nowShowingMovies = response.data.filter(movie => movie.status === 'now_showing');
+        const response = await axios.get('/cinema/api/movies');
+        const nowShowingMovies = response.data.filter((movie) => movie.status === 'now_showing');
         setMovies(nowShowingMovies);
         setLoading(false);
       } catch {
