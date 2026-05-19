@@ -7,6 +7,10 @@ from flask import Flask, Response, jsonify, request
 
 app = Flask(__name__)
 
+CORS_ALLOW_ORIGIN = os.getenv("CORS_ALLOW_ORIGIN", "*")
+CORS_ALLOW_HEADERS = "Authorization, Content-Type"
+CORS_ALLOW_METHODS = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+
 SERVICE_MAP: Dict[str, str] = {
     "auth": os.getenv("AUTH_SERVICE_URL", "http://localhost:5000"),
     "cinema": os.getenv("CINEMA_SERVICE_URL", "http://localhost:5001"),
@@ -58,6 +62,9 @@ def _build_target_url(service_name: str, base_url: str, path: str) -> str:
 
 
 def _forward_request(service_name: str, path: str = "") -> Response:
+    if request.method == "OPTIONS":
+        return Response(status=204)
+
     headers = {
         key: value
         for key, value in request.headers.items()
@@ -110,6 +117,14 @@ def _forward_request(service_name: str, path: str = "") -> Response:
         ),
         502,
     )
+
+
+@app.after_request
+def add_cors_headers(response: Response) -> Response:
+    response.headers["Access-Control-Allow-Origin"] = CORS_ALLOW_ORIGIN
+    response.headers["Access-Control-Allow-Headers"] = CORS_ALLOW_HEADERS
+    response.headers["Access-Control-Allow-Methods"] = CORS_ALLOW_METHODS
+    return response
 
 
 @app.route("/health", methods=["GET"])
