@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Box, Typography, Button, Grid, Chip } from '@mui/material';
 import axios from '../../../ultis/axios';
 import Showtime from '../../showtime/Showtime';
+import { isAuthenticated } from '../../../utils/authUtils';
 
 const MOVIE_STATUS = {
   now_showing: {
@@ -23,6 +25,17 @@ const Movie = ({ movieId }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showtimeModalOpen, setShowtimeModalOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const handleBookingClick = () => {
+    if (!isAuthenticated()) {
+      navigate('/login', {
+        state: { from: { pathname: window.location.pathname } }
+      });
+      return;
+    }
+    setShowtimeModalOpen(true);
+  };
 
   useEffect(() => {
     const fetchMovieDetails = async () => {
@@ -109,7 +122,7 @@ const Movie = ({ movieId }) => {
               color="primary"
               className="booking-button"
               size="large"
-              onClick={() => setShowtimeModalOpen(true)}
+              onClick={handleBookingClick}
             >
               Dat ve
             </Button>
