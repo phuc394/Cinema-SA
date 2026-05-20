@@ -5,6 +5,7 @@ from project.services.booking_service import (
     create_booking,
     get_booking_detail,
     get_booking_history,
+    get_reserved_seats,
 )
 from project.utils.response_handler import error_response, success_response
 
@@ -77,6 +78,17 @@ def get_history_controller():
             for booking in bookings
         ]
     ), 200
+
+
+@token_required
+def get_reserved_seats_controller(showtime_id):
+    seat_codes = get_reserved_seats(showtime_id)
+    return success_response(
+        {
+            "showtime_id": showtime_id,
+            "seat_codes": seat_codes,
+        }
+    )
 
 
 @token_required

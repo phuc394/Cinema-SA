@@ -71,7 +71,7 @@ def list_showtimes(movie_id):
 
 @token_required
 def get_seat_map(showtime_id):
-    showtime, seat_map = MovieService.get_seat_map(showtime_id)
+    showtime, seat_map = MovieService.get_seat_map(showtime_id, user_id=g.current_user_id)
     if not showtime:
         return error_response("Showtime not found", 404)
 

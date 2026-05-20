@@ -123,6 +123,7 @@ def create_booking(user_id, showtime_id, seat_codes, access_token):
             )
 
         db.session.commit()
+        _release_seats(showtime_id, unique_seat_codes, access_token)
         return booking
     except Exception:
         db.session.rollback()
@@ -137,6 +138,22 @@ def get_booking_history(user_id):
         .order_by(Booking.booking_id.desc())
         .all()
     )
+
+
+def get_reserved_seats(showtime_id):
+    reserved_rows = (
+        db.session.query(BookingDetail.seat_code)
+        .join(Booking, Booking.booking_id == BookingDetail.booking_id)
+        .filter(
+            Booking.showtime_id == showtime_id,
+            Booking.status >= 0,
+        )
+        .distinct()
+        .order_by(BookingDetail.seat_code.asc())
+        .all()
+    )
+
+    return [row[0] for row in reserved_rows]
 
 
 def get_booking_detail(booking_id, user_id):

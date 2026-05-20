@@ -1,169 +1,136 @@
-# 📮 Postman Test Guide - Cinema-SA
+# Hướng Dẫn Kiểm Thử Postman - Cinema-SA
 
-Hướng dẫn chi tiết để test hệ thống Cinema-SA bằng Postman
+Tài liệu này được cập nhật theo code hiện tại của dự án, bao gồm luồng chọn ghế, khóa ghế tạm thời, giải phóng ghế và đặt vé.
 
----
+## 1. Khởi động hệ thống
 
-## 📋 Mục Lục
+### 1.1 Yêu cầu
 
-1. [Khởi Động Server](#phần-1-khởi-động-server)
-2. [Flow Chính](#phần-2-flow-chính)
-3. [Test Error](#phần-3-test-error)
+- Đã cài Docker và Docker Compose
+- Các cổng `8080`, `5000`, `5001`, `5002`, `3307`, `3308`, `3309` chưa bị chiếm
 
----
+### 1.2 Chạy toàn bộ dịch vụ
 
-# PHẦN 1: KHỞI ĐỘNG SERVER
+Từ thư mục gốc của project, chạy:
 
-## 1.1 Yêu Cầu
-
-- Docker & Docker Compose được cài đặt
-- Port 8080, 5000, 5001, 5002, 3306 trống (hoặc có thể thay đổi)
-
-## 1.2 Khởi Động Hệ Thống
-
-### Bước 1: Mở Terminal và chuyển đến thư mục project
-```bash
-cd d:\University\SoftwareArchitecture\Cinema-SA
-```
-
-### Bước 2: Khởi động tất cả services qua Docker Compose
 ```bash
 docker compose -f microservices/docker-compose.yml up --build
 ```
 
-### Bước 3: Chờ tất cả services khởi động thành công
-
-Bạn sẽ thấy output tương tự:
-```
-✓ auth_service is running
-✓ cinema_service is running
-✓ order_service is running
-✓ mysql is running
-✓ api_gateway is running
-```
-
-### Bước 4: Kiểm tra services đang chạy
-
-**Verify API Gateway Health**
-```
-GET http://localhost:8080/health
-```
-
-**Expected Response (HTTP 200)**:
-```json
-{
-  "status": "ok",
-  "services": {
-    "auth": "http://localhost:5000",
-    "cinema": "http://localhost:5001",
-    "order": "http://localhost:5002"
-  }
-}
-```
-
-## 1.3 Dừng Services
+Khi cần dừng:
 
 ```bash
 docker compose -f microservices/docker-compose.yml down
 ```
 
----
+Nếu muốn xóa luôn dữ liệu database để test lại từ đầu:
 
-# PHẦN 2: FLOW CHÍNH
-
-## 2.1 Tổng Quan Flow
-
-```
-1. Xem danh sách phim (Public - không cần login)
-   ↓
-2. Xem chi tiết phim (Public - không cần login)
-   ↓
-3. Xem giờ chiếu (Public - không cần login)
-   ↓
-4. Đăng ký tài khoản (Public)
-   ↓
-5. Đăng nhập (Public)
-   ↓
-6. Lấy token (từ đăng nhập)
-   ↓
-7. Xem bản đồ ghế (Protected - cần token)
-   ↓
-8. Đặt vé (Protected - cần token)
-   ↓
-9. Xem lịch sử đặt vé (Protected - cần token)
-   ↓
-10. Hiển thị thành công & về menu
+```bash
+docker compose -f microservices/docker-compose.yml down -v
 ```
 
----
+### 1.3 Kiểm tra API Gateway
 
-## 2.2 Bước 1: Xem Danh Sách Phim (Public - Không Đăng Nhập)
-
-### Request
-```
-Method: GET
-URL: http://localhost:8080/cinema/api/movies
-Headers: None needed
+```http
+GET http://localhost:8080/health
 ```
 
-### Postman Setup
-1. Tạo request mới: `New → Request`
-2. Name: `1. Get All Movies`
-3. Method: `GET`
-4. URL: `http://localhost:8080/cinema/api/movies`
-5. Click `Send`
+Kỳ vọng nhận `HTTP 200`:
 
-### Expected Response (HTTP 200)
 ```json
 {
-  "error": false,
-  "movies": [
-    {
-      "id": 1,
-      "title": "Avatar",
-      "genre": "Sci-Fi",
-      "poster_url": "...",
-      "duration": 162,
-      "release_date": "2022-12-16",
-      "status": "now_showing"
-    },
-    {
-      "id": 2,
-      "title": "The Avengers",
-      "genre": "Action",
-      "poster_url": "...",
-      "duration": 143,
-      "release_date": "2012-05-04",
-      "status": "now_showing"
-    }
-  ]
+  "status": "ok",
+  "services": {
+    "auth": "http://auth_service:5000",
+    "cinema": "http://cinema_service:5000",
+    "order": "http://order_service:5000"
+  },
+  "service_candidates": {
+    "auth": [
+      "http://auth_service:5000",
+      "http://host.docker.internal:5000",
+      "http://localhost:5000"
+    ],
+    "cinema": [
+      "http://cinema_service:5000",
+      "http://host.docker.internal:5001",
+      "http://localhost:5001"
+    ],
+    "order": [
+      "http://order_service:5000",
+      "http://host.docker.internal:5002",
+      "http://localhost:5002"
+    ]
+  }
 }
 ```
 
-### Notes
-- ✅ Không cần authentication
-- ✅ Danh sách phim được trả về
-- 💾 Ghi nhớ `movie_id` (ví dụ: 1) để dùng ở bước tiếp theo
+## 2. Chuẩn bị môi trường Postman
 
----
+Khuyến nghị tạo một environment tên `Cinema-SA` với các biến:
 
-## 2.3 Bước 2: Xem Chi Tiết Phim (Public)
-
-### Request
-```
-Method: GET
-URL: http://localhost:8080/cinema/api/movies/1
-(Thay 1 bằng movie_id từ bước 1)
+```text
+BASE_URL=http://localhost:8080
+AUTH_TOKEN=
+MOVIE_ID=1
+SHOWTIME_ID=1
+BOOKING_ID=1
 ```
 
-### Postman Setup
-1. Tạo request mới: `New → Request`
-2. Name: `2. Get Movie Details`
-3. Method: `GET`
-4. URL: `http://localhost:8080/cinema/api/movies/1`
-5. Click `Send`
+Sau khi đăng nhập, có thể lưu token tự động bằng script trong tab `Tests`:
 
-### Expected Response (HTTP 200)
+```javascript
+const json = pm.response.json();
+pm.environment.set("AUTH_TOKEN", json.token);
+```
+
+## 3. Quy ước endpoint
+
+Trong tài liệu này dùng các URL đúng với frontend hiện tại:
+
+- Auth service: `{{BASE_URL}}/auth/api/auth/...`
+- Cinema service: `{{BASE_URL}}/cinema/api/...`
+- Order service: `{{BASE_URL}}/order/...`
+
+## 4. Luồng kiểm thử chính
+
+## 4.1 Lấy danh sách phim
+
+```http
+GET {{BASE_URL}}/cinema/api/movies
+```
+
+Request này là public, không cần token.
+
+Kỳ vọng `HTTP 200`:
+
+```json
+[
+  {
+    "id": 1,
+    "title": "Avatar",
+    "genre": "Sci-Fi",
+    "poster_url": "https://example.com/avatar.jpg",
+    "duration": 162,
+    "release_date": "2022-12-16",
+    "status": "now_showing"
+  }
+]
+```
+
+Lưu ý:
+
+- Endpoint này trả về trực tiếp một mảng, không bọc trong `error` hoặc `movies`
+- Ghi nhớ `id` của phim để dùng ở bước tiếp theo
+
+## 4.2 Lấy chi tiết phim
+
+```http
+GET {{BASE_URL}}/cinema/api/movies/{{MOVIE_ID}}
+```
+
+Kỳ vọng `HTTP 200`:
+
 ```json
 {
   "error": false,
@@ -172,7 +139,7 @@ URL: http://localhost:8080/cinema/api/movies/1
     "title": "Avatar",
     "genre": "Sci-Fi",
     "description": "A paraplegic Marine...",
-    "poster_url": "...",
+    "poster_url": "https://example.com/avatar.jpg",
     "duration": 162,
     "release_date": "2022-12-16",
     "status": "now_showing"
@@ -180,29 +147,20 @@ URL: http://localhost:8080/cinema/api/movies/1
 }
 ```
 
-### Notes
-- ✅ Chi tiết phim đầy đủ
-- 💾 Ghi nhớ `movie_id` cho bước tiếp theo
+## 4.3 Lấy danh sách suất chiếu
 
----
-
-## 2.4 Bước 3: Xem Giờ Chiếu (Public)
-
-### Request
-```
-Method: GET
-URL: http://localhost:8080/cinema/api/movies/1/showtimes?date=2025-01-15
-(Thay 1 bằng movie_id, thay date nếu cần)
+```http
+GET {{BASE_URL}}/cinema/api/movies/{{MOVIE_ID}}/showtimes
 ```
 
-### Postman Setup
-1. Tạo request mới: `New → Request`
-2. Name: `3. Get Showtimes`
-3. Method: `GET`
-4. URL: `http://localhost:8080/cinema/api/movies/1/showtimes?date=2025-01-15`
-5. Click `Send`
+Có thể lọc theo ngày:
 
-### Expected Response (HTTP 200)
+```http
+GET {{BASE_URL}}/cinema/api/movies/{{MOVIE_ID}}/showtimes?date=2026-05-20
+```
+
+Kỳ vọng `HTTP 200`:
+
 ```json
 {
   "error": false,
@@ -211,189 +169,132 @@ URL: http://localhost:8080/cinema/api/movies/1/showtimes?date=2025-01-15
       "showtime_id": 1,
       "movie_id": 1,
       "room_id": 1,
-      "show_date": "2025-01-15",
+      "show_date": "2026-05-20",
       "start_time": "19:00:00",
-      "end_time": "21:00:00"
-    },
-    {
-      "showtime_id": 2,
-      "movie_id": 1,
-      "room_id": 2,
-      "show_date": "2025-01-15",
-      "start_time": "21:30:00",
-      "end_time": "23:30:00"
+      "end_time": "21:42:00"
     }
   ]
 }
 ```
 
-### Notes
-- ✅ Danh sách giờ chiếu
-- 💾 Ghi nhớ `showtime_id` (ví dụ: 1) cho bước xem ghế
+Lưu ý:
 
----
+- Ghi nhớ `showtime_id`
+- Nếu `date` sai định dạng, hệ thống trả `400` với message `date must be in YYYY-MM-DD format`
 
-## 2.5 Bước 4: Đăng Ký Tài Khoản (Public)
+## 4.4 Đăng ký tài khoản
 
-### Request
-```
-Method: POST
-URL: http://localhost:8080/auth/api/auth/register
+```http
+POST {{BASE_URL}}/auth/api/auth/register
 Content-Type: application/json
+```
 
 Body:
-{
-  "email": "user1@test.com",
-  "password": "password123",
-  "full_name": "John Doe",
-  "phone_number": "01234567890"
-}
-```
 
-### Postman Setup
-1. Tạo request mới: `New → Request`
-2. Name: `4. Register User`
-3. Method: `POST`
-4. URL: `http://localhost:8080/auth/api/auth/register`
-5. Tab `Headers`: Thêm `Content-Type: application/json`
-6. Tab `Body`: Chọn `raw` → `JSON`
-7. Nhập body:
 ```json
 {
+  "full_name": "Nguyen Van A",
+  "phone_number": "0912345678",
   "email": "user1@test.com",
-  "password": "password123",
-  "full_name": "John Doe",
-  "phone_number": "01234567890"
+  "password": "password123"
 }
 ```
-8. Click `Send`
 
-### Expected Response (HTTP 201)
+Kỳ vọng `HTTP 201`:
+
 ```json
 {
   "error": false,
   "message": "User registered successfully",
   "user": {
     "user_id": 1,
+    "full_name": "Nguyen Van A",
+    "phone_number": "0912345678",
     "email": "user1@test.com",
-    "full_name": "John Doe",
-    "phone_number": "01234567890",
-    "created_at": "2025-01-15T10:30:00"
+    "created_at": "2026-05-20T08:30:00"
   }
 }
 ```
 
-### Validation Rules
-- ✅ Email phải có ký tự `@`
-- ✅ Password phải ≥ 6 ký tự + ≥ 1 số
-- ✅ Phone phải 10 hoặc 11 chữ số
-- ✅ Email không được trùng lặp
+Các rule validate hiện tại:
 
-### Notes
-- 💾 Ghi nhớ email & password cho bước đăng nhập
-- ⚠️ Nếu email đã tồn tại, sẽ được lỗi (thử email khác hoặc skip bước này)
+- Bắt buộc có `full_name`, `phone_number`, `email`, `password`
+- Email phải chứa `@`
+- Email phải đúng định dạng cơ bản
+- Mật khẩu tối thiểu 6 ký tự
+- Mật khẩu phải có ít nhất 1 chữ số
+- Số điện thoại chỉ được chứa chữ số, độ dài 10 hoặc 11
+- Email và số điện thoại không được trùng
 
----
+## 4.5 Đăng nhập
 
-## 2.6 Bước 5: Đăng Nhập (Public)
-
-### Request
-```
-Method: POST
-URL: http://localhost:8080/auth/api/auth/login
+```http
+POST {{BASE_URL}}/auth/api/auth/login
 Content-Type: application/json
-
-Body:
-{
-  "email": "user1@test.com",
-  "password": "password123"
-}
 ```
 
-### Postman Setup
-1. Tạo request mới: `New → Request`
-2. Name: `5. Login User`
-3. Method: `POST`
-4. URL: `http://localhost:8080/auth/api/auth/login`
-5. Tab `Headers`: Thêm `Content-Type: application/json`
-6. Tab `Body`: Chọn `raw` → `JSON`
-7. Nhập body:
+Đăng nhập bằng email:
+
 ```json
 {
   "email": "user1@test.com",
   "password": "password123"
 }
 ```
-8. Click `Send`
 
-### Expected Response (HTTP 200)
+Hoặc đăng nhập bằng số điện thoại:
+
+```json
+{
+  "phone_number": "0912345678",
+  "password": "password123"
+}
+```
+
+Kỳ vọng `HTTP 200`:
+
 ```json
 {
   "error": false,
   "message": "Login successful",
-  "token": "eyJ0eXAiOiJKV1QiLCJhbGc...(token dài)",
+  "token": "eyJ...",
   "role": "USER",
   "user": {
     "user_id": 1,
-    "email": "user1@test.com",
-    "full_name": "John Doe",
-    "phone_number": "01234567890"
+    "full_name": "Nguyen Van A",
+    "phone_number": "0912345678",
+    "email": "user1@test.com"
   }
 }
 ```
 
-### Important ⚠️
-- 💾 **GHI NHỚ TOKEN**: Copy toàn bộ giá trị từ `token` field
-- Token này dùng cho tất cả các request tiếp theo (Protected)
-- Token hết hạn sau 24 giờ
+Lưu ý:
 
-### Save Token to Postman Variable
-Để dễ dàng sử dụng token ở các request tiếp theo:
+- Ghi nhớ token hoặc lưu vào biến `AUTH_TOKEN`
+- Tất cả request protected phía dưới đều cần header:
 
-1. Vào Tab `Tests`
-2. Thêm code:
-```javascript
-var jsonData = pm.response.json();
-pm.environment.set("auth_token", jsonData.token);
-```
-3. Postman sẽ tự động lưu token vào biến `auth_token`
-4. Dùng `{{auth_token}}` trong request tiếp theo
-
----
-
-## 2.7 Bước 6: Xem Bản Đồ Ghế (Protected - Cần Token)
-
-### Request
-```
-Method: GET
-URL: http://localhost:8080/cinema/api/showtimes/1/seats
-(Thay 1 bằng showtime_id từ bước 3)
-
-Headers:
-Authorization: Bearer <TOKEN>
-(Thay <TOKEN> bằng token từ bước đăng nhập)
+```http
+Authorization: Bearer {{AUTH_TOKEN}}
 ```
 
-### Postman Setup
-1. Tạo request mới: `New → Request`
-2. Name: `6. Get Seat Map`
-3. Method: `GET`
-4. URL: `http://localhost:8080/cinema/api/showtimes/1/seats`
-5. Tab `Headers`: Thêm:
-   - Key: `Authorization`
-   - Value: `Bearer {{auth_token}}` (hoặc paste token từ bước 5)
-6. Click `Send`
+## 4.6 Xem sơ đồ ghế
 
-### Expected Response (HTTP 200)
+```http
+GET {{BASE_URL}}/cinema/api/showtimes/{{SHOWTIME_ID}}/seats
+Authorization: Bearer {{AUTH_TOKEN}}
+```
+
+Kỳ vọng `HTTP 200`:
+
 ```json
 {
   "error": false,
   "showtime_id": 1,
   "movie_id": 1,
-  "room": "Room A",
-  "show_date": "2025-01-15",
+  "room": "Room 1",
+  "show_date": "2026-05-20",
   "start_time": "19:00:00",
-  "end_time": "21:00:00",
+  "end_time": "21:42:00",
   "seats": [
     {
       "seat_id": 1,
@@ -402,7 +303,10 @@ Authorization: Bearer <TOKEN>
       "column": 1,
       "type": "STANDARD",
       "price": 75000,
-      "is_available": true
+      "is_available": true,
+      "is_locked": false,
+      "locked_by_current_user": false,
+      "lock_expires_at": null
     },
     {
       "seat_id": 2,
@@ -411,79 +315,128 @@ Authorization: Bearer <TOKEN>
       "column": 2,
       "type": "STANDARD",
       "price": 75000,
-      "is_available": true
-    },
-    {
-      "seat_id": 3,
-      "code": "A3",
-      "row": "A",
-      "column": 3,
-      "type": "STANDARD",
-      "price": 75000,
-      "is_available": false
-    },
-    // ... more seats
-    {
-      "seat_id": 80,
-      "code": "H8",
-      "row": "H",
-      "column": 8,
-      "type": "VIP",
-      "price": 90000,
-      "is_available": true
+      "is_available": false,
+      "is_locked": true,
+      "locked_by_current_user": false,
+      "lock_expires_at": "2026-05-20T08:40:00"
     }
   ]
 }
 ```
 
-### Important Notes
-- ✅ Yêu cầu token hợp lệ trong header `Authorization`
-- ✅ Ghế với `is_available: true` có thể được đặt
-- ✅ Ghế với `is_available: false` đã bị người khác booking hoặc bị khoá (5 phút)
-- 💾 Ghi nhớ `seat_code` (ví dụ: A1, A2) mà bạn muốn đặt
-- 🔒 **NEW**: Ghế chỉ được khoá khi thực sự đặt vé, không phải khi xem bản đồ ghế
-- ⏰ Ghế được tự động giải khoá sau 5 phút nếu không hoàn thành đặt vé
+Ý nghĩa các trường quan trọng:
 
+- `is_available: true`: ghế hiện đang có thể chọn
+- `is_locked: true`: ghế đang bị khóa tạm thời
+- `locked_by_current_user: true`: ghế đang do chính user hiện tại giữ
+- `lock_expires_at`: thời điểm khóa ghế hết hạn
 
-## 2.8 Bước 7: Đặt Vé (Protected - Cần Token)
+## 4.7 Lấy danh sách ghế đã đặt thành công
 
-### Request
+```http
+GET {{BASE_URL}}/order/bookings/showtimes/{{SHOWTIME_ID}}/reserved-seats
+Authorization: Bearer {{AUTH_TOKEN}}
 ```
-Method: POST
-URL: http://localhost:8080/order/bookings
-Content-Type: application/json
 
-Headers:
-Authorization: Bearer <TOKEN>
+Kỳ vọng `HTTP 200`:
 
-Body:
+```json
 {
+  "error": false,
   "showtime_id": 1,
-  "seat_codes": ["A1", "A2"]
+  "seat_codes": ["A1", "A2", "B5"]
 }
 ```
 
-### Postman Setup
-1. Tạo request mới: `New → Request`
-2. Name: `7. Create Booking`
-3. Method: `POST`
-4. URL: `http://localhost:8080/order/bookings`
-5. Tab `Headers`: Thêm:
-   - Key: `Authorization`
-   - Value: `Bearer {{auth_token}}`
-   - Key: `Content-Type`
-   - Value: `application/json`
-6. Tab `Body`: Chọn `raw` → `JSON`
-7. Nhập body:
+Endpoint này được frontend dùng để tô đỏ các ghế đã đặt xong.
+
+## 4.8 Khóa ghế tạm thời
+
+```http
+POST {{BASE_URL}}/cinema/api/showtimes/{{SHOWTIME_ID}}/seats/lock
+Authorization: Bearer {{AUTH_TOKEN}}
+Content-Type: application/json
+```
+
+Body:
+
+```json
+{
+  "seat_codes": ["A3"]
+}
+```
+
+Kỳ vọng `HTTP 200`:
+
+```json
+{
+  "error": false,
+  "message": "Seats locked successfully"
+}
+```
+
+Lưu ý:
+
+- Ghế được khóa trong 5 phút
+- Nếu một ghế đang bị user khác giữ, hệ thống trả `400`
+- Nếu muốn đổi ghế đã chọn, frontend hiện gọi lock lại với danh sách ghế mới
+
+## 4.9 Giải phóng ghế đã khóa
+
+```http
+POST {{BASE_URL}}/cinema/api/showtimes/{{SHOWTIME_ID}}/seats/release
+Authorization: Bearer {{AUTH_TOKEN}}
+Content-Type: application/json
+```
+
+Body:
+
+```json
+{
+  "seat_codes": ["A3"]
+}
+```
+
+Kỳ vọng `HTTP 200`:
+
+```json
+{
+  "error": false,
+  "message": "Seats released successfully"
+}
+```
+
+## 4.10 Đặt vé
+
+```http
+POST {{BASE_URL}}/order/bookings
+Authorization: Bearer {{AUTH_TOKEN}}
+Content-Type: application/json
+```
+
+Body khuyến nghị:
+
 ```json
 {
   "showtime_id": 1,
-  "seat_codes": ["A1", "A2"]
+  "seat_codes": ["A3"]
 }
 ```
-8. Click `Send`
 
-### Expected Response (HTTP 201)
+Ngoài `seat_codes`, backend hiện cũng chấp nhận format:
+
+```json
+{
+  "showtime_id": 1,
+  "seats": [
+    { "seat_code": "A3" },
+    { "seat_code": "A4" }
+  ]
+}
+```
+
+Kỳ vọng `HTTP 201`:
+
 ```json
 {
   "error": false,
@@ -493,356 +446,158 @@ Body:
     "status": 1,
     "user_id": 1,
     "showtime_id": 1,
-    "total_amount": 150000
+    "total_amount": 75000.0
   }
 }
 ```
 
-### Status Breakdown
-- `status: 1` = Đặt vé thành công, không cần payment
-- `total_amount` = Giá tiền tổng cộng (seat1_price + seat2_price + ...)
-- **Ví dụ**: 2 ghế STANDARD = 75000 + 75000 = 150000
+Lưu ý quan trọng:
 
-### Validation Rules
-- ✅ Phải cung cấp `showtime_id`
-- ✅ Phải cung cấp ít nhất 1 ghế trong `seat_codes`
-- ✅ Ghế phải tồn tại & hợp lệ
-- ✅ Ghế không được đặt lại (không được có booking trước)
-- ✅ Ghế không được bị khoá bởi người khác (hoặc hết hạn khoá)
-- ✅ Token phải hợp lệ
-- 🔒 **NEW**: Hệ thống sẽ tự động khoá ghế khi bạn đặt vé
-- ⏰ **NEW**: Ghế được giải khoá tự động nếu đặt vé thất bại
+- Service order sẽ tự kiểm tra ghế hợp lệ
+- Service order sẽ tự khóa ghế trước khi tạo booking
+- Nếu booking thất bại, hệ thống sẽ tự giải phóng lock
+- Nếu booking thành công, lock cũng được giải phóng sau khi tạo booking
 
-### Notes
-- ✅ **THÀNH CÔNG!** - Booking đã được tạo
-- ✅ Status = 1 (Confirmed, không cần payment)
-- 💾 Ghi nhớ `booking_id` nếu muốn xem chi tiết sau
-- 🏠 **Frontend**: Hiển thị "Đặt vé thành công!" → Redirect về trang chủ
+## 4.11 Xem lịch sử đặt vé
 
----
-
-## 2.9 Bước 8: Xem Lịch Sử Đặt Vé (Protected - Cần Token)
-
-### Request
-```
-Method: GET
-URL: http://localhost:8080/order/bookings/history
-
-Headers:
-Authorization: Bearer <TOKEN>
+```http
+GET {{BASE_URL}}/order/bookings/history
+Authorization: Bearer {{AUTH_TOKEN}}
 ```
 
-### Postman Setup
-1. Tạo request mới: `New → Request`
-2. Name: `8. Get Booking History`
-3. Method: `GET`
-4. URL: `http://localhost:8080/order/bookings/history`
-5. Tab `Headers`: Thêm:
-   - Key: `Authorization`
-   - Value: `Bearer {{auth_token}}`
-6. Click `Send`
+Kỳ vọng `HTTP 200`:
 
-### Expected Response (HTTP 200)
+```json
+[
+  {
+    "booking_id": 1,
+    "showtime_id": 1,
+    "total_amount": 75000.0,
+    "status": 1,
+    "created_at": "2026-05-20T08:45:00"
+  }
+]
+```
+
+Lưu ý:
+
+- Endpoint này trả về trực tiếp một mảng
+- Chỉ hiển thị booking của user đang đăng nhập
+
+## 4.12 Xem chi tiết một booking
+
+```http
+GET {{BASE_URL}}/order/bookings/{{BOOKING_ID}}
+Authorization: Bearer {{AUTH_TOKEN}}
+```
+
+Kỳ vọng `HTTP 200`:
+
 ```json
 {
   "error": false,
-  "bookings": [
-    {
-      "booking_id": 1,
-      "showtime_id": 1,
-      "total_amount": 150000,
-      "status": 1,
-      "created_at": "2025-01-15T10:45:30"
-    },
-    {
-      "booking_id": 2,
-      "showtime_id": 2,
-      "total_amount": 75000,
-      "status": 1,
-      "created_at": "2025-01-16T14:20:15"
-    }
-  ]
+  "booking": {
+    "booking_id": 1,
+    "showtime_id": 1,
+    "total_amount": 75000.0,
+    "status": 1,
+    "seats": [
+      {
+        "seat_code": "A3",
+        "price": 75000.0
+      }
+    ]
+  }
 }
 ```
 
-### Notes
-- ✅ Lịch sử được sắp xếp theo thứ tự mới nhất trước (`booking_id DESC`)
-- ✅ Chỉ hiển thị booking của user đang đăng nhập
-- ✅ `status: 1` = Đặt vé thành công
-- ✅ `created_at` = Thời gian tạo booking
-- 🎯 Frontend có thể dùng để hiển thị trong "Lịch sử đặt vé" của user
+## 5. Luồng test khuyến nghị cho Seat Map mới
 
-### Flow Tóm Tắt
-```
-Xem phim (public) → Xem giờ chiếu (public) 
-  → Đăng nhập/Đăng ký 
-  → Xem ghế (có token) 
-  → Đặt vé (có token, status=1) 
-  → Xem lịch sử (có token)
-```
+Đây là luồng sát nhất với frontend hiện tại:
 
----
+1. `GET /cinema/api/movies`
+2. `GET /cinema/api/movies/{{MOVIE_ID}}`
+3. `GET /cinema/api/movies/{{MOVIE_ID}}/showtimes`
+4. `POST /auth/api/auth/register`
+5. `POST /auth/api/auth/login`
+6. `GET /cinema/api/showtimes/{{SHOWTIME_ID}}/seats`
+7. `GET /order/bookings/showtimes/{{SHOWTIME_ID}}/reserved-seats`
+8. `POST /cinema/api/showtimes/{{SHOWTIME_ID}}/seats/lock`
+9. `GET /cinema/api/showtimes/{{SHOWTIME_ID}}/seats`
+10. `POST /order/bookings`
+11. `GET /order/bookings/history`
+12. `GET /order/bookings/{{BOOKING_ID}}`
 
-## 2.10 Bước 9: Seat Locking Endpoints (Advanced - Optional)
+Nếu muốn kiểm tra timeout 5 phút:
 
-**Note**: These endpoints are automatically called by the booking service, but can be used manually for testing.
+1. Lock một ghế
+2. Chờ hơn 5 phút
+3. Gọi lại `GET /cinema/api/showtimes/{{SHOWTIME_ID}}/seats`
+4. Xác nhận ghế không còn ở trạng thái lock
 
-### 2.10.1 Lock Specific Seats
+## 6. Các tình huống lỗi cần kiểm thử
 
-### Request
-```
-Method: POST
-URL: http://localhost:8080/cinema/showtimes/{showtime_id}/seats/lock
-Content-Type: application/json
+## 6.1 Xem sơ đồ ghế khi chưa đăng nhập
 
-Headers:
-Authorization: Bearer <TOKEN>
-
-Body:
-{
-  "seat_codes": ["A1", "A2"]
-}
+```http
+GET {{BASE_URL}}/cinema/api/showtimes/{{SHOWTIME_ID}}/seats
 ```
 
-### Expected Response (HTTP 200)
-```json
-{
-  "error": false,
-  "message": "Seats locked successfully"
-}
-```
+Không gửi header `Authorization`.
 
-### Error Response (HTTP 400)
-```json
-{
-  "error": true,
-  "message": "Seat A1 is locked by another user"
-}
-```
+Kỳ vọng `HTTP 401`:
 
-### 2.10.2 Release Seat Locks
-
-### Request
-```
-Method: POST
-URL: http://localhost:8080/cinema/showtimes/{showtime_id}/seats/release
-Content-Type: application/json
-
-Headers:
-Authorization: Bearer <TOKEN>
-
-Body:
-{
-  "seat_codes": ["A1", "A2"]
-}
-```
-
-### Expected Response (HTTP 200)
-```json
-{
-  "error": false,
-  "message": "Seats released successfully"
-}
-```
-
----
-
-# PHẦN 3: TEST ERROR
-
-## 3.1 Tổng Quan Error Cases
-
-Các tình huống lỗi để kiểm tra:
-1. Xem ghế mà không đăng nhập
-2. Đặt vé mà không đăng nhập
-3. Token hết hạn/không hợp lệ
-4. Booking ghế đã bị đặt
-5. Email trùng lặp khi đăng ký
-6. Password yếu (< 6 ký tự)
-7. Email không hợp lệ (không có @)
-8. Phone không hợp lệ (không 10-11 chữ số)
-9. Tên phim không tồn tại
-10. Ghế không tồn tại
-
----
-
-## 3.2 Error Case 1: Xem Ghế Mà Không Đăng Nhập ❌
-
-### Request
-```
-Method: GET
-URL: http://localhost:8080/cinema/api/showtimes/1/seats
-
-Headers: (EMPTY - Không có token)
-```
-
-### Postman Setup
-1. Tạo request mới: `New → Request`
-2. Name: `ERROR 1. Get Seats Without Login`
-3. Method: `GET`
-4. URL: `http://localhost:8080/cinema/api/showtimes/1/seats`
-5. **Không thêm Header Authorization** ← Important!
-6. Click `Send`
-
-### Expected Response (HTTP 401)
 ```json
 {
   "message": "Token is missing"
 }
 ```
 
-### ✅ Verification
-- ❌ Status code = 401 Unauthorized
-- ✅ Không thể xem ghế mà không đăng nhập
+## 6.2 Đặt vé khi chưa đăng nhập
 
-### Notes
-- ✅ Hệ thống đúng cách yêu cầu authentication
-- ✅ Bảo vệ dữ liệu ghế (pricing, availability)
-
----
-
-## 3.3 Error Case 2: Đặt Vé Mà Không Đăng Nhập ❌
-
-### Request
-```
-Method: POST
-URL: http://localhost:8080/bookings
+```http
+POST {{BASE_URL}}/order/bookings
 Content-Type: application/json
-
-Headers: (EMPTY - Không có token)
+```
 
 Body:
-{
-  "showtime_id": 1,
-  "seat_codes": ["A1"]
-}
-```
 
-### Postman Setup
-1. Tạo request mới: `New → Request`
-2. Name: `ERROR 2. Book Seats Without Login`
-3. Method: `POST`
-4. URL: `http://localhost:8080/bookings`
-5. Tab `Headers`: Chỉ thêm `Content-Type: application/json` (KHÔNG có Authorization)
-6. Tab `Body`: 
 ```json
 {
   "showtime_id": 1,
   "seat_codes": ["A1"]
 }
 ```
-7. Click `Send`
 
-### Expected Response (HTTP 401)
+Kỳ vọng `HTTP 401`:
+
 ```json
 {
   "message": "Token is missing"
 }
 ```
 
-### ✅ Verification
-- ❌ Status code = 401 Unauthorized
-- ✅ Không thể đặt vé mà không đăng nhập
-- ✅ Bảo vệ booking (chỉ user đã xác thực mới có thể đặt)
+## 6.3 Token không hợp lệ
 
-### Notes
-- ✅ Hệ thống bắt buộc authentication trước booking
-- ✅ Không bao giờ có anonymous booking
-
----
-
-## 3.4 Error Case 3: Token Không Hợp Lệ ❌
-
-### Request
-```
-Method: GET
-URL: http://localhost:8080/cinema/api/showtimes/1/seats
-
-Headers:
-Authorization: Bearer invalid_token_here
+```http
+GET {{BASE_URL}}/cinema/api/showtimes/{{SHOWTIME_ID}}/seats
+Authorization: Bearer invalid_token
 ```
 
-### Postman Setup
-1. Tạo request mới: `New → Request`
-2. Name: `ERROR 3. Invalid Token`
-3. Method: `GET`
-4. URL: `http://localhost:8080/cinema/api/showtimes/1/seats`
-5. Tab `Headers`: Thêm:
-   - Key: `Authorization`
-   - Value: `Bearer invalid_token_here` (hoặc bất kỳ string ngẫu nhiên)
-6. Click `Send`
+Kỳ vọng `HTTP 401`:
 
-### Expected Response (HTTP 401)
 ```json
 {
   "message": "Invalid token"
 }
 ```
 
-### ✅ Verification
-- ❌ Status code = 401 Unauthorized
-- ✅ Token không hợp lệ bị reject
+## 6.4 Email đã tồn tại
 
----
+Gửi `POST {{BASE_URL}}/auth/api/auth/register` hai lần với cùng email.
 
-## 3.5 Error Case 4: Email Trùng Lặp Khi Đăng Ký ❌
+Kỳ vọng lần sau nhận `HTTP 400`:
 
-### Setup
-Thực hiện bước 4 (Register) 2 lần với cùng email
-
-### Request
-```
-Method: POST
-URL: http://localhost:8080/auth/api/auth/register
-Content-Type: application/json
-
-Body (first time):
-{
-  "email": "duplicate@test.com",
-  "password": "password123",
-  "full_name": "Test User",
-  "phone_number": "01234567890"
-}
-
-Body (second time - same email):
-{
-  "email": "duplicate@test.com",
-  "password": "password123",
-  "full_name": "Another User",
-  "phone_number": "09876543210"
-}
-```
-
-### Postman Setup - Register Lần 1
-1. Name: `ERROR 4a. Register - First Time`
-2. Method: `POST`
-3. URL: `http://localhost:8080/auth/api/auth/register`
-4. Body:
-```json
-{
-  "email": "duplicate@test.com",
-  "password": "password123",
-  "full_name": "Test User",
-  "phone_number": "01234567890"
-}
-```
-5. Click `Send` → ✅ HTTP 201 Created
-
-### Postman Setup - Register Lần 2 (Duplicate)
-1. Name: `ERROR 4b. Register - Duplicate Email`
-2. Method: `POST`
-3. URL: `http://localhost:8080/auth/api/auth/register`
-4. Body:
-```json
-{
-  "email": "duplicate@test.com",
-  "password": "password123",
-  "full_name": "Another User",
-  "phone_number": "09876543210"
-}
-```
-5. Click `Send`
-
-### Expected Response (HTTP 400)
 ```json
 {
   "error": true,
@@ -850,46 +605,34 @@ Body (second time - same email):
 }
 ```
 
-### ✅ Verification
-- ❌ Status code = 400 Bad Request
-- ✅ Email trùng bị reject
-- ✅ Bảo vệ dữ liệu user (unique email)
+## 6.5 Số điện thoại đã tồn tại
 
----
+Gửi `POST {{BASE_URL}}/auth/api/auth/register` hai lần với cùng `phone_number`.
 
-## 3.6 Error Case 5: Password Yếu (< 6 ký tự) ❌
+Kỳ vọng `HTTP 400`:
 
-### Request
-```
-Method: POST
-URL: http://localhost:8080/auth/api/auth/register
-Content-Type: application/json
-
-Body:
-{
-  "email": "weakpass@test.com",
-  "password": "abc",
-  "full_name": "Test User",
-  "phone_number": "01234567890"
-}
-```
-
-### Postman Setup
-1. Name: `ERROR 5. Weak Password`
-2. Method: `POST`
-3. URL: `http://localhost:8080/auth/api/auth/register`
-4. Body:
 ```json
 {
-  "email": "weakpass@test.com",
-  "password": "abc",
-  "full_name": "Test User",
-  "phone_number": "01234567890"
+  "error": true,
+  "message": "Phone number already exists"
 }
 ```
-5. Click `Send`
 
-### Expected Response (HTTP 400)
+## 6.6 Mật khẩu quá ngắn
+
+Body:
+
+```json
+{
+  "full_name": "Nguyen Van B",
+  "phone_number": "0911111111",
+  "email": "short@test.com",
+  "password": "abc"
+}
+```
+
+Kỳ vọng `HTTP 400`:
+
 ```json
 {
   "error": true,
@@ -897,55 +640,21 @@ Body:
 }
 ```
 
-### ✅ Verification
-- ❌ Status code = 400 Bad Request
-- ✅ Password ngắn (< 6 ký tự) bị reject
-
-### Password Rules
-- ✅ Phải ≥ 6 ký tự
-- ✅ Phải chứa ≥ 1 chữ số
-
-### Test Scenarios
-- `"abc"` → ❌ Quá ngắn + không có số
-- `"abcdef"` → ❌ Không có số
-- `"abc123"` → ✅ OK (6 ký tự + có số)
-- `"password1"` → ✅ OK (9 ký tự + có số)
-
----
-
-## 3.7 Error Case 6: Password Không Có Số ❌
-
-### Request
-```
-Method: POST
-URL: http://localhost:8080/auth/api/auth/register
-Content-Type: application/json
+## 6.7 Mật khẩu không có chữ số
 
 Body:
-{
-  "email": "nodigit@test.com",
-  "password": "abcdef",
-  "full_name": "Test User",
-  "phone_number": "01234567890"
-}
-```
 
-### Postman Setup
-1. Name: `ERROR 6. Password No Digit`
-2. Method: `POST`
-3. URL: `http://localhost:8080/auth/api/auth/register`
-4. Body:
 ```json
 {
+  "full_name": "Nguyen Van C",
+  "phone_number": "0922222222",
   "email": "nodigit@test.com",
-  "password": "abcdef",
-  "full_name": "Test User",
-  "phone_number": "01234567890"
+  "password": "abcdef"
 }
 ```
-5. Click `Send`
 
-### Expected Response (HTTP 400)
+Kỳ vọng `HTTP 400`:
+
 ```json
 {
   "error": true,
@@ -953,45 +662,21 @@ Body:
 }
 ```
 
-### ✅ Verification
-- ❌ Status code = 400 Bad Request
-- ✅ Password không có số bị reject
-
----
-
-## 3.8 Error Case 7: Email Không Hợp Lệ (Không Có @) ❌
-
-### Request
-```
-Method: POST
-URL: http://localhost:8080/auth/api/auth/register
-Content-Type: application/json
+## 6.8 Email sai định dạng
 
 Body:
-{
-  "email": "invalidemail",
-  "password": "password123",
-  "full_name": "Test User",
-  "phone_number": "01234567890"
-}
-```
 
-### Postman Setup
-1. Name: `ERROR 7. Invalid Email Format`
-2. Method: `POST`
-3. URL: `http://localhost:8080/auth/api/auth/register`
-4. Body:
 ```json
 {
+  "full_name": "Nguyen Van D",
+  "phone_number": "0933333333",
   "email": "invalidemail",
-  "password": "password123",
-  "full_name": "Test User",
-  "phone_number": "01234567890"
+  "password": "password123"
 }
 ```
-5. Click `Send`
 
-### Expected Response (HTTP 400)
+Kỳ vọng `HTTP 400`:
+
 ```json
 {
   "error": true,
@@ -999,53 +684,39 @@ Body:
 }
 ```
 
-### ✅ Verification
-- ❌ Status code = 400 Bad Request
-- ✅ Email không có @ bị reject
+Hoặc nếu có `@` nhưng format vẫn sai:
 
-### Email Validation Rules
-- ✅ Phải có ký tự `@`
-- ✅ Phải có format: `user@domain.ext`
-- ❌ `invalidemail` → Không có @
-- ❌ `@nodomain` → Không có user
-- ❌ `user@` → Không có domain
-- ✅ `user@test.com` → OK
-
----
-
-## 3.9 Error Case 8: Phone Không Hợp Lệ (Không 10-11 Chữ Số) ❌
-
-### Request A: Quá ít chữ số
-```
-Method: POST
-URL: http://localhost:8080/auth/api/auth/register
-Content-Type: application/json
-
-Body:
-{
-  "email": "validuser@test.com",
-  "password": "password123",
-  "full_name": "Test User",
-  "phone_number": "123456"
-}
-```
-
-### Postman Setup A
-1. Name: `ERROR 8a. Phone Too Short`
-2. Method: `POST`
-3. URL: `http://localhost:8080/auth/api/auth/register`
-4. Body:
 ```json
 {
-  "email": "validuser@test.com",
-  "password": "password123",
-  "full_name": "Test User",
-  "phone_number": "123456"
+  "error": true,
+  "message": "Invalid email format"
 }
 ```
-5. Click `Send`
 
-### Expected Response (HTTP 400)
+## 6.9 Số điện thoại sai định dạng
+
+Ví dụ body:
+
+```json
+{
+  "full_name": "Nguyen Van E",
+  "phone_number": "09A123",
+  "email": "phone@test.com",
+  "password": "password123"
+}
+```
+
+Kỳ vọng `HTTP 400` với một trong các message:
+
+```json
+{
+  "error": true,
+  "message": "Phone number must contain only digits"
+}
+```
+
+hoặc:
+
 ```json
 {
   "error": true,
@@ -1053,75 +724,14 @@ Body:
 }
 ```
 
-### Request B: Quá nhiều chữ số
-```
-Method: POST
-URL: http://localhost:8080/auth/api/auth/register
-Content-Type: application/json
+## 6.10 Phim không tồn tại
 
-Body:
-{
-  "email": "anotheruser@test.com",
-  "password": "password123",
-  "full_name": "Test User",
-  "phone_number": "012345678901"
-}
+```http
+GET {{BASE_URL}}/cinema/api/movies/999999
 ```
 
-### Postman Setup B
-1. Name: `ERROR 8b. Phone Too Long`
-2. Method: `POST`
-3. URL: `http://localhost:8080/auth/api/auth/register`
-4. Body:
-```json
-{
-  "email": "anotheruser@test.com",
-  "password": "password123",
-  "full_name": "Test User",
-  "phone_number": "012345678901"
-}
-```
-5. Click `Send`
+Kỳ vọng `HTTP 404`:
 
-### Expected Response (HTTP 400)
-```json
-{
-  "error": true,
-  "message": "Phone number must be 10 or 11 digits"
-}
-```
-
-### ✅ Verification
-- ❌ Status code = 400 Bad Request
-- ✅ Phone số sai bị reject
-
-### Phone Validation Rules
-- ✅ Phải **chính xác** 10 hoặc 11 chữ số
-- ✅ Chỉ chấp nhận chữ số (bỏ qua space/dấu gạch)
-- ❌ `123456` → Quá ngắn (6 chữ số)
-- ❌ `012345678901` → Quá dài (12 chữ số)
-- ✅ `0123456789` → OK (10 chữ số)
-- ✅ `01234567890` → OK (11 chữ số)
-- ✅ `012 345 6789` → OK (10 chữ số, spaces bị bỏ qua)
-
----
-
-## 3.10 Error Case 9: Movie Không Tồn Tại ❌
-
-### Request
-```
-Method: GET
-URL: http://localhost:8080/cinema/api/movies/999
-(Movie ID 999 không tồn tại)
-```
-
-### Postman Setup
-1. Name: `ERROR 9. Movie Not Found`
-2. Method: `GET`
-3. URL: `http://localhost:8080/cinema/api/movies/999`
-4. Click `Send`
-
-### Expected Response (HTTP 404)
 ```json
 {
   "error": true,
@@ -1129,251 +739,153 @@ URL: http://localhost:8080/cinema/api/movies/999
 }
 ```
 
-### ✅ Verification
-- ❌ Status code = 404 Not Found
-- ✅ Movie không tồn tại bị reject
+## 6.11 Suất chiếu không tồn tại
 
----
-
-## 3.11 Error Case 10: Booking Ghế Đã Được Đặt ❌
-
-### Setup Scenario
-
-**Step 1**: User A đăng nhập & đặt vé ghế A1  
-**Step 2**: User B đăng nhập & cố gắng đặt vé ghế A1 → ❌ Error
-
-### Request
-```
-Method: POST
-URL: http://localhost:8080/order/bookings
-Content-Type: application/json
-
-Headers:
-Authorization: Bearer <USER_B_TOKEN>
-
-Body:
-{
-  "showtime_id": 1,
-  "seat_codes": ["A1"]
-}
+```http
+GET {{BASE_URL}}/cinema/api/showtimes/999999/seats
+Authorization: Bearer {{AUTH_TOKEN}}
 ```
 
-### Setup Steps
+Kỳ vọng `HTTP 404`:
 
-#### Step 1: User A Login & Book
-```bash
-1. Login User A (email: user_a@test.com)
-   → Get token_A
-   
-2. POST /order/bookings
-   Authorization: Bearer token_A
-   Body: {"showtime_id": 1, "seat_codes": ["A1"]}
-   → HTTP 201 ✅ Booking created
-```
-
-#### Step 2: User B Login & Try Book Same Seat
-```bash
-1. Login User B (email: user_b@test.com)
-   → Get token_B
-   
-2. POST /order/bookings
-   Authorization: Bearer token_B
-   Body: {"showtime_id": 1, "seat_codes": ["A1"]}
-   → HTTP 400 ❌ Error
-```
-
-### Postman Setup - User B Try Book
-1. Name: `ERROR 10. Seat Already Booked`
-2. Method: `POST`
-3. URL: `http://localhost:8080/order/bookings`
-4. Headers:
-   - `Authorization: Bearer <USER_B_TOKEN>`
-   - `Content-Type: application/json`
-5. Body:
-```json
-{
-  "showtime_id": 1,
-  "seat_codes": ["A1"]
-}
-```
-6. Click `Send`
-
-### Expected Response (HTTP 400)
 ```json
 {
   "error": true,
-  "message": "Seats already booked: A1"
+  "message": "Showtime not found"
 }
 ```
 
-### ✅ Verification
-- ❌ Status code = 400 Bad Request
-- ✅ Ghế A1 đã bị đặt bị reject
-- ✅ Không bao giờ có 2 user book cùng ghế
+## 6.12 Khóa một ghế đang bị người khác giữ
 
----
+Ví dụ:
 
-## 3.12 Error Case 11: Seat Lock (Đặt Cùng Ghế) ⏰
+- User A lock ghế `A5`
+- User B tiếp tục gọi lock ghế `A5`
 
-### Scenario
-User A bắt đầu đặt vé ghế A1 → Ghế A1 bị khoá 5 phút  
-User B cũng cố gắng đặt ghế A1 → Bị từ chối  
+Kỳ vọng `HTTP 400`:
 
-### Postman Setup
-
-#### Step 1: User A Starts Booking (Locks Seat A1)
-```bash
-1. POST /order/bookings
-   Authorization: Bearer token_A
-   Body: {"showtime_id": 1, "seat_codes": ["A1"]}
-   → Response: HTTP 201 (Booking successful)
-   Note: Seat A1 is locked during the booking process
+```json
+{
+  "error": true,
+  "message": "Seat A5 is locked by another user"
+}
 ```
 
-#### Step 2: User B Tries Same Seat (Immediately After)
-```bash
-1. POST /order/bookings
-   Authorization: Bearer token_B
-   Body: {"showtime_id": 1, "seat_codes": ["A1"]}
-   → Response: HTTP 400
-   Error: "Seats already booked: A1"
-   Note: User B cannot book the same seat
+## 6.13 Đặt lại ghế đã được đặt thành công
+
+Sau khi User A đặt thành công ghế `A6`, User B gọi:
+
+```http
+POST {{BASE_URL}}/order/bookings
+Authorization: Bearer {{AUTH_TOKEN}}
+Content-Type: application/json
 ```
 
-#### Step 3: Manual Seat Lock Test (Optional)
-```bash
-1. Wait 5+ minutes
-   
-2. GET /cinema/api/showtimes/1/seats
-   Authorization: Bearer token_A (User A's old lock expired)
-   → Response: Seats are available again (or booked if User B completed booking)
+Body:
+
+```json
+{
+  "showtime_id": 1,
+  "seat_codes": ["A6"]
+}
 ```
 
-### Notes
-- ⏰ Lock expires after **exactly 5 minutes**
-- 🔄 When user views seats, their old locks are replaced
-- ✅ Prevents race conditions (2 users booking same seat)
+Kỳ vọng `HTTP 400`:
 
----
-
-# PHẦN 4: SUMMARY
-
-## Quick Test Flow
-
-### Happy Path### Success Cases
-```
-1. GET /cinema/movies                              (200 OK - public)
-2. GET /cinema/movies/1                            (200 OK - public)
-3. GET /cinema/movies/1/showtimes                  (200 OK - public)
-4. POST /auth/api/auth/register                    (201 Created)
-5. POST /auth/api/auth/login                       (200 OK + token)
-6. GET /cinema/showtimes/1/seats                   (200 OK with token)
-7. POST /order/bookings                            (201 Created with token)
-8. GET /order/bookings/history                     (200 OK with token)
+```json
+{
+  "error": true,
+  "message": "Seats already booked: A6"
+}
 ```
 
-### Error Cases
-```
-1. GET /cinema/showtimes/1/seats (no token)               (401 Unauthorized)
-2. POST /order/bookings (no token)                        (401 Unauthorized)
-3. Register with duplicate email                            (400 Bad Request)
-4. Register with weak password                              (400 Bad Request)
-5. Register with invalid email (no @)                       (400 Bad Request)
-6. Register with invalid phone (not 10-11 digits)          (400 Bad Request)
-7. GET /cinema/movies/999                                  (404 Not Found)
-8. POST /order/bookings with already booked seat           (400 Bad Request)
-```
+## 7. Gợi ý cấu trúc collection Postman
 
-### New Seat Locking Endpoints (Optional)
-```
-9. POST /cinema/showtimes/1/seats/lock              (200 OK - lock specific seats)
-10. POST /cinema/showtimes/1/seats/release           (200 OK - release seat locks)
-```
+Bạn có thể nhóm request theo các folder sau:
 
----
+### 7.1 Hệ thống
 
-## Environment Setup (Optional - Postman)
+- `GET /health`
 
-Để làm việc hiệu quả hơn với Postman, bạn có thể setup Environment:
+### 7.2 Xác thực
 
-1. Click `Environments` ở sidebar
-2. Click `Create New Environment`
-3. Name: `Cinema-SA`
-4. Thêm variables:
-```
-BASE_URL = http://localhost:8080
-AUTH_TOKEN = (để trống, sẽ được set sau login)
-MOVIE_ID = 1
-SHOWTIME_ID = 1
-SEAT_CODES = ["A1", "A2"]
-```
+- `POST /auth/api/auth/register`
+- `POST /auth/api/auth/login`
 
-5. Sau khi login, update `AUTH_TOKEN`:
-   - Vào request login → Tab `Tests`
-   - Thêm script:
-```javascript
-var jsonData = pm.response.json();
-pm.environment.set("AUTH_TOKEN", jsonData.token);
+### 7.3 Phim và suất chiếu
+
+- `GET /cinema/api/movies`
+- `GET /cinema/api/movies/{movie_id}`
+- `GET /cinema/api/movies/{movie_id}/showtimes`
+
+### 7.4 Ghế
+
+- `GET /cinema/api/showtimes/{showtime_id}/seats`
+- `GET /order/bookings/showtimes/{showtime_id}/reserved-seats`
+- `POST /cinema/api/showtimes/{showtime_id}/seats/lock`
+- `POST /cinema/api/showtimes/{showtime_id}/seats/release`
+
+### 7.5 Đặt vé
+
+- `POST /order/bookings`
+- `GET /order/bookings/history`
+- `GET /order/bookings/{booking_id}`
+
+## 8. Xử lý sự cố
+
+## 8.1 Không kết nối được gateway
+
+Nếu gặp lỗi như:
+
+```text
+connect ECONNREFUSED 127.0.0.1:8080
 ```
 
-6. Dùng `{{BASE_URL}}`, `{{AUTH_TOKEN}}` trong requests
+Hãy kiểm tra container:
 
----
-
-## Postman Collection Export
-
-Để lưu tất cả requests, bạn có thể export collection:
-
-1. Chọn Collection → Menu `...` → `Export`
-2. Format: `JSON`
-3. Lưu file `Cinema-SA.postman_collection.json`
-4. Chia sẻ hoặc import lại khi cần
-
----
-
-## Troubleshooting
-
-### Issue 1: Connection Refused
-```
-Error: connect ECONNREFUSED 127.0.0.1:8080
-```
-**Solution**: Kiểm tra Docker services có chạy không
 ```bash
 docker ps
-# Nếu không thấy services, run:
+```
+
+Nếu chưa chạy, khởi động lại:
+
+```bash
 docker compose -f microservices/docker-compose.yml up --build
 ```
 
-### Issue 2: Invalid Token
-```
-Error: Invalid token
-```
-**Solution**: Đăng nhập lại & copy token mới
+## 8.2 Token hết hạn hoặc sai
 
-### Issue 3: Email Already Exists
-```
-Error: Email already exists
-```
-**Solution**: Dùng email khác hoặc delete database
+Nếu nhận `Invalid token` hoặc `Token has expired`, hãy đăng nhập lại để lấy token mới.
+
+## 8.3 Dữ liệu test bị trùng
+
+Nếu test register bị trùng email hoặc số điện thoại quá nhiều, có thể:
+
+- dùng email/số điện thoại mới
+- hoặc reset toàn bộ dữ liệu:
+
 ```bash
 docker compose -f microservices/docker-compose.yml down -v
 docker compose -f microservices/docker-compose.yml up --build
 ```
 
-### Issue 4: Seat Already Booked
-```
-Error: Seats already booked
-```
-**Solution**: Chọn ghế khác hoặc reset database (liên minh Issue 3)
+## 8.4 Ghế đang bị khóa
 
----
+Nếu một ghế đang bị khóa tạm thời:
 
-## Conclusion
+- chờ hơn 5 phút để lock tự hết hạn
+- hoặc dùng chính user đã khóa ghế gọi endpoint `release`
 
-Postman guide này cung cấp đầy đủ test cases cho hệ thống Cinema-SA:
-- ✅ 8 Happy Path flows
-- ✅ 11 Error case scenarios
-- ✅ Chi tiết request/response cho mỗi endpoint
-- ✅ Hướng dẫn setup & troubleshooting
+## 9. Tóm tắt nhanh
 
-**Ready to test!** 🚀
+Luồng chuẩn để test tính năng Seat Map mới:
+
+1. Đăng ký hoặc đăng nhập
+2. Lấy `showtime_id`
+3. Xem sơ đồ ghế
+4. Xem danh sách ghế đã đặt
+5. Lock ghế muốn chọn
+6. Đặt vé
+7. Kiểm tra lịch sử và chi tiết booking
+
+Luồng này bám sát cách frontend hiện tại đang hoạt động.

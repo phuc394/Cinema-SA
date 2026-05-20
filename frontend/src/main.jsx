@@ -4,11 +4,13 @@ import Home from './pages/home/Home.jsx'
 import MovieDetails from './pages/movieDetails/MovieDetails.jsx'
 import Login from './pages/login/Login.jsx'
 import SignUp from './pages/signUp/signUp.jsx'
+import SeatMapPage from './pages/seatMaps/seatMap.jsx'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 
 const router = createBrowserRouter([
   { path: '/', element: <Home /> },
   { path: '/movie/:id', element: <MovieDetails /> },
+  { path: '/seat-map/:showtimeId', element: <SeatMapPage /> },
   { path: '/login', element: <Login /> },
   { path: '/signup', element: <SignUp /> },
 ])

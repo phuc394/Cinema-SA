@@ -133,6 +133,7 @@ const Movie = ({ movieId }) => {
         open={showtimeModalOpen}
         onClose={() => setShowtimeModalOpen(false)}
         movieId={movieId}
+        movieTitle={movie?.title}
       />
     </>
   );
