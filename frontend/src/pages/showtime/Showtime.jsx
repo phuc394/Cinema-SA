@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import axios from '../../ultis/axios';
-import { isAuthenticated } from '../../utils/authUtils';
+import { isAuthenticated, savePendingShowtime } from '../../utils/authUtils';
 import './Showtime.css';
 
 const Showtime = ({ open, onClose, movieId, movieTitle }) => {
@@ -72,7 +72,7 @@ const Showtime = ({ open, onClose, movieId, movieTitle }) => {
 
   const handleShowtimeClick = (showtime) => {
     if (!isAuthenticated()) {
-      // Store current location for redirect after login
+      savePendingShowtime(showtime);
       navigate('/login', { 
         state: { from: { pathname: window.location.pathname } } 
       });

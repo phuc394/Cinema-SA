@@ -32,6 +32,12 @@ axiosInstance.interceptors.response.use(
     if (error.response) {
       // Server responded with error status
       console.error('API Error:', error.response.data);
+      
+      // Handle token expired (401 Unauthorized)
+      if (error.response.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
     } else if (error.request) {
       // Request made but no response
       console.error('No response from server:', error.request);
