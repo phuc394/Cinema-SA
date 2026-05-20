@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Box, Typography, Grid, Card, CardMedia, CardContent, Chip } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import axios from '../../../ultis/axios';
+import axios from '../../../utils/axios';
 import './ComingSoon.css';
 
 const ComingSoon = () => {

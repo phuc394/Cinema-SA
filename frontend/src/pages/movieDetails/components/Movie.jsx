@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Typography, Button, Grid, Chip } from '@mui/material';
-import axios from '../../../ultis/axios';
+import axios from '../../../utils/axios';
 import Showtime from '../../showtime/Showtime';
 import { isAuthenticated } from '../../../utils/authUtils';
 
