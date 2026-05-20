@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Box, Container, TextField, Button, Typography, Link, Paper } from '@mui/material';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
-import axios from '../../ultis/axios';
+import axios from '../../utils/axios';
 import { getPendingShowtime, clearPendingShowtime } from '../../utils/authUtils';
 import './Login.css';
 

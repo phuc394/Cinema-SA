@@ -11,7 +11,7 @@ import {
   CircularProgress
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import axios from '../../ultis/axios';
+import axios from '../../utils/axios';
 import { isAuthenticated, savePendingShowtime } from '../../utils/authUtils';
 import './Showtime.css';
 
