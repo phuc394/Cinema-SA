@@ -4,6 +4,7 @@ import { Box, Container, TextField, Button, Typography, Link, Paper } from '@mui
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import axios from '../../ultis/axios';
+import { getPendingShowtime, clearPendingShowtime } from '../../utils/authUtils';
 import './Login.css';
 
 const Login = () => {
@@ -36,6 +37,19 @@ const Login = () => {
       const { token, user } = response.data;
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
+
+      // Check for pending showtime
+      const pendingShowtime = getPendingShowtime();
+      if (pendingShowtime) {
+        clearPendingShowtime();
+        navigate(`/seat-map/${pendingShowtime.showtime_id}`, { 
+          state: {
+            showtime: pendingShowtime
+          },
+          replace: true 
+        });
+        return;
+      }
 
       // Redirect to previous page or home
       const from = location.state?.from?.pathname || '/';
