@@ -15,7 +15,7 @@ import axios from '../../ultis/axios';
 import { isAuthenticated } from '../../utils/authUtils';
 import './Showtime.css';
 
-const Showtime = ({ open, onClose, movieId }) => {
+const Showtime = ({ open, onClose, movieId, movieTitle }) => {
   const [showtimes, setShowtimes] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -78,8 +78,14 @@ const Showtime = ({ open, onClose, movieId }) => {
       });
       return;
     }
-    // TODO: Handle actual showtime selection/booking
-    console.log('Showtime selected:', showtime);
+    onClose();
+    navigate(`/seat-map/${showtime.showtime_id}`, {
+      state: {
+        movieId,
+        movieTitle,
+        showtime,
+      },
+    });
   };
 
   return (

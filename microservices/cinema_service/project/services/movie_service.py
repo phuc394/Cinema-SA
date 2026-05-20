@@ -68,11 +68,12 @@ class MovieService:
         db.session.commit()
 
         # Get current locked seats
-        locked_seats = {
-            lock.seat_code
+        active_locks = [
+            lock
             for lock in TemporarySeatLock.query.filter_by(showtime_id=showtime_id, status=1).all()
             if lock.expires_at > now
-        }
+        ]
+        locked_seats = {lock.seat_code: lock for lock in active_locks}
 
         seat_map = [
             {
@@ -83,6 +84,17 @@ class MovieService:
                 "type": cls._seat_type(seat),
                 "price": cls._seat_price(seat),
                 "is_available": cls._seat_code(seat) not in locked_seats,
+                "is_locked": cls._seat_code(seat) in locked_seats,
+                "locked_by_current_user": bool(
+                    user_id
+                    and cls._seat_code(seat) in locked_seats
+                    and locked_seats[cls._seat_code(seat)].user_id == user_id
+                ),
+                "lock_expires_at": (
+                    locked_seats[cls._seat_code(seat)].expires_at.isoformat()
+                    if cls._seat_code(seat) in locked_seats
+                    else None
+                ),
             }
             for seat in seats
         ]
