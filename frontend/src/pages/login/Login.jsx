@@ -4,7 +4,7 @@ import { Box, Container, TextField, Button, Typography, Link, Paper } from '@mui
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import axios from '../../utils/axios';
-import { getPendingShowtime, clearPendingShowtime } from '../../utils/authUtils';
+import { getPendingShowtime, clearPendingShowtime, saveAuthSession } from '../../utils/authUtils';
 import './Login.css';
 
 const Login = () => {
@@ -35,8 +35,7 @@ const Login = () => {
       });
 
       const { token, user } = response.data;
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
+      saveAuthSession(token, user);
 
       // Check for pending showtime
       const pendingShowtime = getPendingShowtime();

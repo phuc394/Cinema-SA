@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   Alert,
@@ -50,7 +50,6 @@ const SeatMapPage = () => {
   const { showtimeId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const redirectTimerRef = useRef(null);
 
   const [seatData, setSeatData] = useState(null);
   const [reservedSeatCodes, setReservedSeatCodes] = useState([]);
@@ -166,14 +165,6 @@ const SeatMapPage = () => {
     return () => window.clearTimeout(timeoutId);
   }, [lockDeadline, selectedSeatCodes, showtimeId, syncSeatMap]);
 
-  useEffect(() => {
-    return () => {
-      if (redirectTimerRef.current) {
-        window.clearTimeout(redirectTimerRef.current);
-      }
-    };
-  }, []);
-
   const seatLookup = new Map((seatData?.seats || []).map((seat) => [seat.code, seat]));
   const reservedSeatSet = new Set(reservedSeatCodes);
   const selectedSeatSet = new Set(selectedSeatCodes);
@@ -269,7 +260,7 @@ const SeatMapPage = () => {
     setBookingLoading(true);
 
     try {
-      const response = await axios.post('/order/bookings', {
+      const response = await axios.post('/order/bookings/create_booking', {
         showtime_id: Number(showtimeId),
         seat_codes: selectedSeatCodes,
       });
@@ -278,9 +269,6 @@ const SeatMapPage = () => {
       setSelectedSeatCodes([]);
       setLockDeadline(null);
       setSuccessDialogOpen(true);
-      redirectTimerRef.current = window.setTimeout(() => {
-        navigate('/', { replace: true });
-      }, 1800);
     } catch (error) {
       await syncSeatMap({ suppressLoading: true });
       setFeedback({
@@ -395,18 +383,21 @@ const SeatMapPage = () => {
         </Alert>
       </Snackbar>
 
-      <Dialog open={successDialogOpen} onClose={() => navigate('/', { replace: true })}>
+      <Dialog open={successDialogOpen} onClose={() => {}}>
         <DialogTitle>Dat ve thanh cong</DialogTitle>
         <DialogContent>
-          <Typography gutterBottom>
-            Ban da dat thanh cong {bookingResult?.booking_id ? `ma don #${bookingResult.booking_id}` : 've xem phim'}.
-          </Typography>
+          <Alert severity="success" sx={{ mb: 2 }}>
+            Ban da dat ve thanh cong
+            {bookingResult?.booking_id ? `, ma don #${bookingResult.booking_id}` : ''}.
+          </Alert>
           <Typography variant="body2">
-            Tong thanh toan: {formatCurrency(bookingResult?.total_amount || totalAmount)}
+            Tong thanh toan: {formatCurrency(bookingResult?.total_amount || 0)}
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => navigate('/', { replace: true })}>Ve trang chu</Button>
+          <Button variant="contained" onClick={() => navigate('/', { replace: true })}>
+            Ve trang chu
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

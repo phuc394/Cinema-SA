@@ -409,7 +409,7 @@ Kỳ vọng `HTTP 200`:
 ## 4.10 Đặt vé
 
 ```http
-POST {{BASE_URL}}/order/bookings
+POST {{BASE_URL}}/order/bookings/create_booking
 Authorization: Bearer {{AUTH_TOKEN}}
 Content-Type: application/json
 ```
@@ -453,6 +453,8 @@ Kỳ vọng `HTTP 201`:
 
 Lưu ý quan trọng:
 
+- Frontend hiện tại gọi endpoint `POST /order/bookings/create_booking`
+- Endpoint cũ `POST /order/bookings` vẫn được hỗ trợ để tương thích
 - Service order sẽ tự kiểm tra ghế hợp lệ
 - Service order sẽ tự khóa ghế trước khi tạo booking
 - Nếu booking thất bại, hệ thống sẽ tự giải phóng lock
@@ -524,7 +526,7 @@ Kỳ vọng `HTTP 200`:
 7. `GET /order/bookings/showtimes/{{SHOWTIME_ID}}/reserved-seats`
 8. `POST /cinema/api/showtimes/{{SHOWTIME_ID}}/seats/lock`
 9. `GET /cinema/api/showtimes/{{SHOWTIME_ID}}/seats`
-10. `POST /order/bookings`
+10. `POST /order/bookings/create_booking`
 11. `GET /order/bookings/history`
 12. `GET /order/bookings/{{BOOKING_ID}}`
 
@@ -556,7 +558,7 @@ Kỳ vọng `HTTP 401`:
 ## 6.2 Đặt vé khi chưa đăng nhập
 
 ```http
-POST {{BASE_URL}}/order/bookings
+POST {{BASE_URL}}/order/bookings/create_booking
 Content-Type: application/json
 ```
 
@@ -776,7 +778,7 @@ Kỳ vọng `HTTP 400`:
 Sau khi User A đặt thành công ghế `A6`, User B gọi:
 
 ```http
-POST {{BASE_URL}}/order/bookings
+POST {{BASE_URL}}/order/bookings/create_booking
 Authorization: Bearer {{AUTH_TOKEN}}
 Content-Type: application/json
 ```
@@ -827,7 +829,7 @@ Bạn có thể nhóm request theo các folder sau:
 
 ### 7.5 Đặt vé
 
-- `POST /order/bookings`
+- `POST /order/bookings/create_booking`
 - `GET /order/bookings/history`
 - `GET /order/bookings/{booking_id}`
 
