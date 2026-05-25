@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getToken, logout } from './authUtils';
 
 const axiosInstance = axios.create({
   baseURL: 'http://localhost:8080',
@@ -11,7 +12,7 @@ const axiosInstance = axios.create({
 // Request interceptor
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -35,8 +36,7 @@ axiosInstance.interceptors.response.use(
       
       // Handle token expired (401 Unauthorized)
       if (error.response.status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        logout();
       }
     } else if (error.request) {
       // Request made but no response
