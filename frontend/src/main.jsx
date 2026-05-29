@@ -5,7 +5,9 @@ import MovieDetails from './pages/movieDetails/MovieDetails.jsx'
 import Login from './pages/login/Login.jsx'
 import SignUp from './pages/signUp/signUp.jsx'
 import SeatMapPage from './pages/seatMaps/seatMap.jsx'
+import Profile from './pages/Profile/Profile.jsx'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import './index.css'
 
 const router = createBrowserRouter([
   { path: '/', element: <Home /> },
@@ -13,6 +15,7 @@ const router = createBrowserRouter([
   { path: '/seat-map/:showtimeId', element: <SeatMapPage /> },
   { path: '/login', element: <Login /> },
   { path: '/signup', element: <SignUp /> },
+  { path: '/profile', element: <Profile /> },
 ])
 
 createRoot(document.getElementById('root')).render(

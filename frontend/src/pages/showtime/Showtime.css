@@ -1,24 +1,33 @@
 .showtime-modal-paper {
   max-height: 90vh;
   max-width: 90vw;
-  border-radius: 12px;
+  border-radius: 8px;
+  box-shadow: none;
 }
 
 .showtime-modal-title {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 24px;
-  border-bottom: 1px solid #e0e0e0;
+  padding: 18px 24px;
+  border-bottom: 1px solid #e4e8ef;
 }
 
 .showtime-modal-title-text {
-  font-weight: 600;
+  font-weight: 700 !important;
   font-size: 1.25rem;
+  color: #111827;
 }
 
 .showtime-close-button {
   padding: 8px;
+  color: #4b5563 !important;
+  border-radius: 8px !important;
+}
+
+.showtime-close-button:hover {
+  color: #1976d2 !important;
+  background: #f1f6fd !important;
 }
 
 .showtime-modal-content {
@@ -44,7 +53,7 @@
 .showtime-no-showtimes {
   text-align: center;
   padding: 40px 20px;
-  color: #757575;
+  color: #667085;
 }
 
 .showtime-container {
@@ -61,9 +70,9 @@
 }
 
 .showtime-section-title {
-  font-weight: 600;
+  font-weight: 700 !important;
   font-size: 1rem;
-  color: #333;
+  color: #1f2937;
 }
 
 .showtime-dates {
@@ -76,19 +85,21 @@
   font-size: 0.9rem;
   padding: 8px 16px;
   height: auto;
-  background-color: #f5f5f5;
-  border: 1px solid #e0e0e0;
+  background-color: #ffffff !important;
+  border: 1px solid #e4e8ef !important;
+  color: #4b5563 !important;
   transition: all 0.2s ease;
 }
 
 .showtime-date-chip:hover {
-  background-color: #e0e0e0;
+  background-color: #f1f6fd !important;
+  border-color: #c8d8ee !important;
 }
 
 .showtime-date-chip.selected {
-  background-color: #1976d2;
-  color: white;
-  border-color: #1976d2;
+  background-color: #1976d2 !important;
+  color: #ffffff !important;
+  border-color: #1976d2 !important;
 }
 
 .showtime-times {
@@ -99,17 +110,17 @@
 
 .showtime-time-chip {
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 700 !important;
   padding: 10px 20px;
   height: auto;
-  background-color: #fff;
-  border: 2px solid #1976d2;
-  color: #1976d2;
+  background-color: #ffffff !important;
+  border: 1px solid #1976d2 !important;
+  color: #1976d2 !important;
   transition: all 0.2s ease;
 }
 
 .showtime-time-chip:hover {
-  background-color: #1976d2;
-  color: white;
+  background-color: #1976d2 !important;
+  color: #ffffff !important;
   cursor: pointer;
 }

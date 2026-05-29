@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Box, Container, TextField, Button, Typography, Link, Paper } from '@mui/material';
-import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import axios from '../../utils/axios';
 import { getPendingShowtime, clearPendingShowtime, saveAuthSession } from '../../utils/authUtils';
@@ -37,34 +36,31 @@ const Login = () => {
       const { token, user } = response.data;
       saveAuthSession(token, user);
 
-      // Check for pending showtime
       const pendingShowtime = getPendingShowtime();
       if (pendingShowtime) {
         clearPendingShowtime();
-        navigate(`/seat-map/${pendingShowtime.showtime_id}`, { 
+        navigate(`/seat-map/${pendingShowtime.showtime_id}`, {
           state: {
             showtime: pendingShowtime
           },
-          replace: true 
+          replace: true
         });
         return;
       }
 
-      // Redirect to previous page or home
       const from = location.state?.from?.pathname || '/';
       navigate(from, { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || 'Đăng nhập thất bại');
+      setError(err.response?.data?.message || 'Login failed');
     }
   };
 
   return (
     <div className="login-page">
-      <Header />
       <Container component="main" maxWidth="xs" className="login-container">
         <Paper elevation={3} className="login-paper">
           <Typography component="h1" variant="h5" className="login-title">
-            Đăng nhập
+            Login
           </Typography>
           <Box component="form" onSubmit={handleSubmit} className="login-form">
             <TextField
@@ -72,7 +68,7 @@ const Login = () => {
               required
               fullWidth
               id="identifier"
-              label="Số điện thoại hoặc Email"
+              label="Phone number or email"
               name="identifier"
               autoComplete="email phone"
               autoFocus
@@ -84,7 +80,7 @@ const Login = () => {
               required
               fullWidth
               name="password"
-              label="Mật khẩu"
+              label="Password"
               type="password"
               id="password"
               autoComplete="current-password"
@@ -102,13 +98,13 @@ const Login = () => {
               variant="contained"
               className="login-button"
             >
-              Đăng nhập
+              Login
             </Button>
             <Box className="signup-link">
               <Typography variant="body2">
-                Chưa có tài khoản?{' '}
+                Don't have an account?{' '}
                 <Link href="/signup" variant="body2">
-                  Đăng ký
+                  Sign up
                 </Link>
               </Typography>
             </Box>

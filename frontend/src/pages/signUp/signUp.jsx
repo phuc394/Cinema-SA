@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Box, Container, TextField, Button, Typography, Link, Paper } from '@mui/material';
-import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import axios from '../../utils/axios';
 import './SignUp.css';
@@ -33,21 +32,19 @@ const SignUp = () => {
       const { user } = response.data;
       localStorage.setItem('pendingUser', JSON.stringify(user));
 
-      // Redirect to previous page or home
       const from = location.state?.from?.pathname;
       navigate('/login', { replace: true, state: from ? { from: { pathname: from } } : undefined });
     } catch (err) {
-      setError(err.response?.data?.message || 'Tạo tài khoản thất bại');
+      setError(err.response?.data?.message || 'Account creation failed');
     }
   };
 
   return (
     <div className="signup-page">
-      <Header />
       <Container component="main" maxWidth="xs" className="signup-container">
         <Paper elevation={3} className="signup-paper">
           <Typography component="h1" variant="h5" className="signup-title">
-            Đăng ký
+            Sign up
           </Typography>
           <Box component="form" onSubmit={handleSubmit} className="signup-form">
             <TextField
@@ -55,7 +52,7 @@ const SignUp = () => {
               required
               fullWidth
               id="full_name"
-              label="Họ tên"
+              label="Full name"
               name="full_name"
               autoComplete="name"
               autoFocus
@@ -67,7 +64,7 @@ const SignUp = () => {
               required
               fullWidth
               id="phone_number"
-              label="Số điện thoại"
+              label="Phone number"
               name="phone_number"
               autoComplete="phone"
               value={formData.phone_number}
@@ -89,7 +86,7 @@ const SignUp = () => {
               required
               fullWidth
               name="password"
-              label="Mật khẩu"
+              label="Password"
               type="password"
               id="password"
               autoComplete="new-password"
@@ -107,13 +104,13 @@ const SignUp = () => {
               variant="contained"
               className="signup-button"
             >
-              Tạo tài khoản
+              Create account
             </Button>
             <Box className="login-link">
               <Typography variant="body2">
-                Đã có tài khoản?{' '}
+                Already have an account?{' '}
                 <Link href="/login" variant="body2">
-                  Đăng nhập
+                  Login
                 </Link>
               </Typography>
             </Box>

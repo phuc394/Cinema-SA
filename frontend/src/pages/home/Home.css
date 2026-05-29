@@ -8,7 +8,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: #f8f8f8;
+  background-color: #f6f8fb;
 }
 
 .home-body {
@@ -17,8 +17,9 @@
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
-  padding: 0;
-  background-color: #fafafa;
+  gap: 1.5rem;
+  padding: 2rem 1rem 3rem;
+  background-color: #f6f8fb;
 }
 
 h1 {
