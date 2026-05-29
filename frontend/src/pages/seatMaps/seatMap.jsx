@@ -41,10 +41,24 @@ const formatDate = (dateString) => {
     return dateString;
   }
 
-  return parsedDate.toLocaleDateString('vi-VN');
+  return parsedDate.toLocaleDateString('en-US');
 };
 
 const formatTime = (timeString) => (timeString ? timeString.slice(0, 5) : '--');
+
+const normalizeSeatCode = (seatCode) => String(seatCode || '').trim().toUpperCase();
+
+const normalizeSeatCodes = (seatCodes = []) =>
+  seatCodes.map(normalizeSeatCode).filter(Boolean);
+
+const getReservedSeatCodes = (responseData) =>
+  normalizeSeatCodes(
+    responseData?.seat_codes ||
+      responseData?.reserved_seats ||
+      responseData?.data?.seat_codes ||
+      responseData?.data?.reserved_seats ||
+      []
+  );
 
 const SeatMapPage = () => {
   const { showtimeId } = useParams();
@@ -64,7 +78,7 @@ const SeatMapPage = () => {
   const [bookingResult, setBookingResult] = useState(null);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 
-  const syncSeatMap = useCallback(async ({ suppressLoading = false } = {}) => {
+  const syncSeatMap = useCallback(async ({ suppressLoading = false, expectedSelectedSeats = null } = {}) => {
     if (!showtimeId) {
       return;
     }
@@ -80,12 +94,17 @@ const SeatMapPage = () => {
       ]);
 
       const nextSeatData = seatMapResponse.data;
-      const nextReservedSeatCodes = reservedSeatsResponse.data.seat_codes || [];
-      const nextSelectedSeats = (nextSeatData.seats || [])
-        .filter(
-          (seat) => seat.locked_by_current_user && !nextReservedSeatCodes.includes(seat.code)
-        )
-        .map((seat) => seat.code);
+      const nextReservedSeatCodes = getReservedSeatCodes(reservedSeatsResponse.data);
+      const nextReservedSeatSet = new Set(nextReservedSeatCodes);
+      const lockedByCurrentUser = normalizeSeatCodes(
+        (nextSeatData.seats || [])
+          .filter((seat) => seat.locked_by_current_user)
+          .map((seat) => seat.code)
+      );
+      const optimisticSelectedSeats = normalizeSeatCodes(expectedSelectedSeats || []);
+      const nextSelectedSeats = Array.from(
+        new Set([...lockedByCurrentUser, ...optimisticSelectedSeats])
+      ).filter((seatCode) => !nextReservedSeatSet.has(seatCode));
       const deadlines = (nextSeatData.seats || [])
         .filter((seat) => nextSelectedSeats.includes(seat.code) && seat.lock_expires_at)
         .map((seat) => new Date(seat.lock_expires_at).getTime())
@@ -94,11 +113,17 @@ const SeatMapPage = () => {
       setSeatData(nextSeatData);
       setReservedSeatCodes(nextReservedSeatCodes);
       setSelectedSeatCodes(nextSelectedSeats);
-      setLockDeadline(deadlines.length ? Math.min(...deadlines) : null);
+      setLockDeadline(
+        deadlines.length
+          ? Math.min(...deadlines)
+          : optimisticSelectedSeats.length
+            ? Date.now() + 5 * 60 * 1000
+            : null
+      );
       setCurrentTime(Date.now());
       setPageError('');
     } catch (error) {
-      setPageError(error.response?.data?.message || 'Khong the tai so do ghe.');
+      setPageError(error.response?.data?.message || 'Unable to load the seat map.');
     } finally {
       setLoading(false);
     }
@@ -151,13 +176,13 @@ const SeatMapPage = () => {
         setFeedback({
           open: true,
           severity: 'warning',
-          message: 'Ghe da het thoi gian giu va duoc mo khoa.',
+          message: 'Your seat hold has expired and the seats were released.',
         });
       } catch {
         setFeedback({
           open: true,
           severity: 'error',
-          message: 'Khong the tu dong mo khoa ghe. Vui long tai lai trang.',
+          message: 'Unable to release seats automatically. Please refresh the page.',
         });
       }
     }, timeout);
@@ -208,10 +233,10 @@ const SeatMapPage = () => {
     : 0;
   const minutes = String(Math.floor(remainingSeconds / 60)).padStart(2, '0');
   const seconds = String(remainingSeconds % 60).padStart(2, '0');
-  const pageMovieTitle = location.state?.movieTitle || `Suat chieu #${showtimeId}`;
+  const pageMovieTitle = location.state?.movieTitle || `Showtime #${showtimeId}`;
   const showDate = seatData?.show_date || location.state?.showtime?.show_date;
   const startTime = seatData?.start_time || location.state?.showtime?.start_time;
-  const roomName = seatData?.room || 'Dang cap nhat';
+  const roomName = seatData?.room || 'Updating';
 
   const handleSeatClick = async (seat) => {
     if (seat.disabled || seatActionCode || bookingLoading) {
@@ -219,11 +244,18 @@ const SeatMapPage = () => {
     }
 
     const isCurrentlySelected = selectedSeatSet.has(seat.code);
+    const previousSelectedSeatCodes = selectedSeatCodes;
     setSeatActionCode(seat.code);
 
     try {
+      const nextSelectedSeatCodes = isCurrentlySelected
+        ? selectedSeatCodes.filter((seatCode) => seatCode !== seat.code)
+        : [...selectedSeatCodes, seat.code];
+
+      setSelectedSeatCodes(normalizeSeatCodes(nextSelectedSeatCodes));
+
       if (isCurrentlySelected) {
-        const remainingSeats = selectedSeatCodes.filter((seatCode) => seatCode !== seat.code);
+        const remainingSeats = nextSelectedSeatCodes;
         await axios.post(`/cinema/api/showtimes/${showtimeId}/seats/release`, {
           seat_codes: [seat.code],
         });
@@ -235,17 +267,21 @@ const SeatMapPage = () => {
         }
       } else {
         await axios.post(`/cinema/api/showtimes/${showtimeId}/seats/lock`, {
-          seat_codes: [...selectedSeatCodes, seat.code],
+          seat_codes: nextSelectedSeatCodes,
         });
       }
 
-      await syncSeatMap({ suppressLoading: true });
+      await syncSeatMap({
+        suppressLoading: true,
+        expectedSelectedSeats: nextSelectedSeatCodes,
+      });
     } catch (error) {
+      setSelectedSeatCodes(normalizeSeatCodes(previousSelectedSeatCodes));
       await syncSeatMap({ suppressLoading: true });
       setFeedback({
         open: true,
         severity: 'error',
-        message: error.response?.data?.message || 'Khong the cap nhat trang thai ghe.',
+        message: error.response?.data?.message || 'Unable to update seat status.',
       });
     } finally {
       setSeatActionCode('');
@@ -268,13 +304,14 @@ const SeatMapPage = () => {
       setBookingResult(response.data.booking);
       setSelectedSeatCodes([]);
       setLockDeadline(null);
+      await syncSeatMap({ suppressLoading: true });
       setSuccessDialogOpen(true);
     } catch (error) {
       await syncSeatMap({ suppressLoading: true });
       setFeedback({
         open: true,
         severity: 'error',
-        message: error.response?.data?.message || 'Dat ve that bai. Vui long thu lai.',
+        message: error.response?.data?.message || 'Booking failed. Please try again.',
       });
     } finally {
       setBookingLoading(false);
@@ -296,15 +333,15 @@ const SeatMapPage = () => {
                   {pageMovieTitle}
                 </Typography>
                 <Typography variant="body1" className="seat-map-panel__subtitle">
-                  Phong {roomName} | {formatDate(showDate)} | {formatTime(startTime)}
+                  Room {roomName} | {formatDate(showDate)} | {formatTime(startTime)}
                 </Typography>
               </Box>
 
-              <Box className="seat-map-screen">MAN HINH</Box>
+              <Box className="seat-map-screen">SCREEN</Box>
 
               {loading ? (
                 <Box className="seat-map-state">
-                  <Typography>Dang tai so do ghe...</Typography>
+                  <Typography>Loading seat map...</Typography>
                 </Box>
               ) : pageError ? (
                 <Box className="seat-map-state">
@@ -326,14 +363,14 @@ const SeatMapPage = () => {
                     spacing={1.5}
                     className="seat-map-legend"
                   >
-                    <Chip label="Trong" className="seat-map-legend__chip seat-map-legend__chip--available" />
-                    <Chip label="Da dat / dang khoa" className="seat-map-legend__chip seat-map-legend__chip--unavailable" />
-                    <Chip label="Dang chon" className="seat-map-legend__chip seat-map-legend__chip--selected" />
+                    <Chip label="Available" className="seat-map-legend__chip seat-map-legend__chip--available" />
+                    <Chip label="Booked / locked" className="seat-map-legend__chip seat-map-legend__chip--unavailable" />
+                    <Chip label="Selected" className="seat-map-legend__chip seat-map-legend__chip--selected" />
                     <Chip
                       label={
                         selectedSeatCodes.length
-                          ? `Giu ghe con ${minutes}:${seconds}`
-                          : 'Chon ghe de bat dau giu cho'
+                          ? `Seat hold ends in ${minutes}:${seconds}`
+                          : 'Select seats to start holding them'
                       }
                       color="info"
                       variant="outlined"
@@ -342,12 +379,12 @@ const SeatMapPage = () => {
 
                   <Paper elevation={0} className="seat-map-summary">
                     <Box>
-                      <Typography variant="h6">Thong tin dat ve</Typography>
+                      <Typography variant="h6">Booking details</Typography>
                       <Typography variant="body2" className="seat-map-summary__text">
-                        Ghe da chon: {selectedSeatCodes.length ? selectedSeatCodes.join(', ') : 'Chua co'}
+                        Selected seats: {selectedSeatCodes.length ? selectedSeatCodes.join(', ') : 'None'}
                       </Typography>
                       <Typography variant="body2" className="seat-map-summary__text">
-                        Tong tien tam tinh: {formatCurrency(totalAmount)}
+                        Estimated total: {formatCurrency(totalAmount)}
                       </Typography>
                     </Box>
                     <Button
@@ -357,7 +394,7 @@ const SeatMapPage = () => {
                       disabled={!selectedSeatCodes.length || bookingLoading}
                       onClick={handleBooking}
                     >
-                      {bookingLoading ? 'Dang dat ve...' : 'Dat ve'}
+                      {bookingLoading ? 'Booking...' : 'Book tickets'}
                     </Button>
                   </Paper>
                 </>
@@ -384,19 +421,19 @@ const SeatMapPage = () => {
       </Snackbar>
 
       <Dialog open={successDialogOpen} onClose={() => {}}>
-        <DialogTitle>Dat ve thanh cong</DialogTitle>
+        <DialogTitle>Booking successful</DialogTitle>
         <DialogContent>
           <Alert severity="success" sx={{ mb: 2 }}>
-            Ban da dat ve thanh cong
-            {bookingResult?.booking_id ? `, ma don #${bookingResult.booking_id}` : ''}.
+            Your booking was completed successfully
+            {bookingResult?.booking_id ? `, booking ID #${bookingResult.booking_id}` : ''}.
           </Alert>
           <Typography variant="body2">
-            Tong thanh toan: {formatCurrency(bookingResult?.total_amount || 0)}
+            Total paid: {formatCurrency(bookingResult?.total_amount || 0)}
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button variant="contained" onClick={() => navigate('/', { replace: true })}>
-            Ve trang chu
+            Back to home
           </Button>
         </DialogActions>
       </Dialog>

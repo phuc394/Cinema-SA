@@ -30,7 +30,7 @@ const Showtime = ({ open, onClose, movieId, movieTitle }) => {
         const response = await axios.get(`/cinema/api/movies/${movieId}/showtimes`);
         const showtimeList = response.data.showtimes || [];
         setShowtimes(showtimeList);
-        // Select the first date by default
+
         if (showtimeList.length > 0) {
           const uniqueDates = [...new Set(showtimeList.map((s) => s.show_date))];
           setSelectedDate(uniqueDates[0]);
@@ -59,25 +59,22 @@ const Showtime = ({ open, onClose, movieId, movieTitle }) => {
     return showtimes.filter(s => s.show_date === date);
   };
 
-  const formatTime = (timeString) => {
-    // Convert time string like "10:00:00" to "10:00"
-    return timeString.substring(0, 5);
-  };
+  const formatTime = (timeString) => timeString.substring(0, 5);
 
   const formatDate = (dateString) => {
-    // Convert date string like "2026-03-24" to a more readable format
     const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    return date.toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
   const handleShowtimeClick = (showtime) => {
     if (!isAuthenticated()) {
       savePendingShowtime(showtime);
-      navigate('/login', { 
-        state: { from: { pathname: window.location.pathname } } 
+      navigate('/login', {
+        state: { from: { pathname: window.location.pathname } }
       });
       return;
     }
+
     onClose();
     navigate(`/seat-map/${showtime.showtime_id}`, {
       state: {
@@ -101,7 +98,7 @@ const Showtime = ({ open, onClose, movieId, movieTitle }) => {
     >
       <DialogTitle className="showtime-modal-title">
         <Typography variant="h6" component="div" className="showtime-modal-title-text">
-          Chọn suất chiếu
+          Select showtime
         </Typography>
         <IconButton
           aria-label="close"
@@ -123,10 +120,9 @@ const Showtime = ({ open, onClose, movieId, movieTitle }) => {
           </Typography>
         ) : showtimes && showtimes.length > 0 ? (
           <Box className="showtime-container">
-            {/* Date Selection */}
             <Box className="showtime-dates-section">
               <Typography variant="subtitle1" className="showtime-section-title">
-                Chọn ngày
+                Select date
               </Typography>
               <Box className="showtime-dates">
                 {getUniqueDates().map((date) => (
@@ -141,11 +137,10 @@ const Showtime = ({ open, onClose, movieId, movieTitle }) => {
               </Box>
             </Box>
 
-            {/* Showtimes for selected date */}
             {selectedDate && (
               <Box className="showtime-times-section">
                 <Typography variant="subtitle1" className="showtime-section-title">
-                  Suất chiếu
+                  Showtimes
                 </Typography>
                 <Box className="showtime-times">
                   {getShowtimesForDate(selectedDate).map((showtime) => (
@@ -163,7 +158,7 @@ const Showtime = ({ open, onClose, movieId, movieTitle }) => {
           </Box>
         ) : (
           <Typography className="showtime-no-showtimes">
-            Không có suất chiếu nào
+            No showtimes available
           </Typography>
         )}
       </DialogContent>

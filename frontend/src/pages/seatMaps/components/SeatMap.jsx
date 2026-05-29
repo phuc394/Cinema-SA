@@ -1,4 +1,4 @@
-import { Box, ButtonBase, CircularProgress, Typography } from '@mui/material';
+import { Box, ButtonBase, CircularProgress } from '@mui/material';
 
 const SEAT_ROWS = Array.from({ length: 10 }, (_, index) => String.fromCharCode(65 + index));
 const SEAT_COLUMNS = Array.from({ length: 10 }, (_, index) => index + 1);
@@ -10,9 +10,6 @@ const SeatMap = ({ seats, activeSeatCode, isBusy, onSeatClick }) => {
     <Box className="seat-map-board">
       {SEAT_ROWS.map((rowLabel) => (
         <Box key={rowLabel} className="seat-map-board__row">
-          <Typography variant="body2" className="seat-map-board__row-label">
-            {rowLabel}
-          </Typography>
           <Box className="seat-map-board__grid">
             {SEAT_COLUMNS.map((columnNumber) => {
               const seatCode = `${rowLabel}${columnNumber}`;

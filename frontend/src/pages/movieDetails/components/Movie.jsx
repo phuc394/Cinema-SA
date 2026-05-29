@@ -4,18 +4,19 @@ import { Box, Typography, Button, Grid, Chip } from '@mui/material';
 import axios from '../../../utils/axios';
 import Showtime from '../../showtime/Showtime';
 import { isAuthenticated } from '../../../utils/authUtils';
+import './Movie.css';
 
 const MOVIE_STATUS = {
   now_showing: {
-    label: 'Dang chieu',
+    label: 'Now showing',
     color: 'success',
   },
   coming_soon: {
-    label: 'Sap chieu',
+    label: 'Coming soon',
     color: 'info',
   },
   stopped: {
-    label: 'Ngung chieu',
+    label: 'Stopped',
     color: 'error',
   },
 };
@@ -34,6 +35,7 @@ const Movie = ({ movieId }) => {
       });
       return;
     }
+
     setShowtimeModalOpen(true);
   };
 
@@ -77,7 +79,7 @@ const Movie = ({ movieId }) => {
   }
 
   const statusConfig = MOVIE_STATUS[movie.status] || {
-    label: 'Khong ro',
+    label: 'Unknown',
     color: 'default',
   };
 
@@ -96,17 +98,17 @@ const Movie = ({ movieId }) => {
             {movie.title}
           </Typography>
           <Typography variant="body1" className="movie-genre">
-            <strong>The loai:</strong> {movie.genre}
+            <strong>Genre:</strong> {movie.genre}
           </Typography>
           <Typography variant="body1" className="movie-release-date">
-            <strong>Ngay chieu:</strong> {movie.release_date || 'TBA'}
+            <strong>Release date:</strong> {movie.release_date || 'TBA'}
           </Typography>
           <Typography variant="body1" className="movie-duration">
-            <strong>Thoi luong:</strong> {movie.duration} phut
+            <strong>Duration:</strong> {movie.duration} min
           </Typography>
           {movie.description && (
             <Typography variant="body1" className="movie-description">
-              <strong>Mo ta:</strong> {movie.description}
+              <strong>Description:</strong> {movie.description}
             </Typography>
           )}
           <Box className="movie-status">
@@ -124,7 +126,7 @@ const Movie = ({ movieId }) => {
               size="large"
               onClick={handleBookingClick}
             >
-              Dat ve
+              Book tickets
             </Button>
           )}
         </Grid>

@@ -29,7 +29,7 @@ const NowShowing = () => {
   if (loading) {
     return (
       <Box className="section-container">
-        <Typography variant="h5" className="section-title">Phim Đang Chiếu</Typography>
+        <Typography variant="h5" className="section-title">Now Showing</Typography>
         <Typography>Loading...</Typography>
       </Box>
     );
@@ -38,7 +38,7 @@ const NowShowing = () => {
   if (error) {
     return (
       <Box className="section-container">
-        <Typography variant="h5" className="section-title">Phim Đang Chiếu</Typography>
+        <Typography variant="h5" className="section-title">Now Showing</Typography>
         <Typography color="error">{error}</Typography>
       </Box>
     );
@@ -46,7 +46,7 @@ const NowShowing = () => {
 
   return (
     <Box className="section-container">
-      <Typography variant="h4" className="section-title">Phim Đang Chiếu</Typography>
+      <Typography variant="h4" className="section-title">Now Showing</Typography>
       <Grid container className="movies-grid">
         {movies.map((movie) => (
           <Grid item xs={12} sm={6} md={4} lg={3} key={movie.id}>
@@ -74,7 +74,7 @@ const NowShowing = () => {
         ))}
       </Grid>
     </Box>
-  );  
+  );
 };
 
 export default NowShowing;

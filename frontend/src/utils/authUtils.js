@@ -22,19 +22,23 @@ const decodeJwtPayload = (token) => {
   }
 };
 
+const isSavedTokenExpired = () => {
+  const savedAt = Number(localStorage.getItem(AUTH_TOKEN_SAVED_AT_KEY));
+  return !savedAt || Date.now() - savedAt >= AUTH_TOKEN_TTL_MS;
+};
+
 export const isTokenExpired = (token) => {
   if (!token) {
     return true;
   }
 
   if (token.split('.').length !== 3) {
-    const savedAt = Number(localStorage.getItem(AUTH_TOKEN_SAVED_AT_KEY));
-    return !savedAt || Date.now() - savedAt >= AUTH_TOKEN_TTL_MS;
+    return isSavedTokenExpired();
   }
 
   const payload = decodeJwtPayload(token);
   if (!payload?.exp) {
-    return true;
+    return isSavedTokenExpired();
   }
 
   return payload.exp * 1000 <= Date.now();
@@ -51,6 +55,10 @@ export const getToken = () => {
 };
 
 export const saveAuthSession = (token, user) => {
+  if (!token) {
+    return;
+  }
+
   localStorage.setItem(AUTH_TOKEN_KEY, token);
   localStorage.setItem(AUTH_TOKEN_SAVED_AT_KEY, String(Date.now()));
   localStorage.setItem('user', JSON.stringify(user));
