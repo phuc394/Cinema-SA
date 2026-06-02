@@ -5,7 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:python": "vite --mode python",
+    "dev:csharp": "vite --mode csharp",
     "build": "vite build",
+    "build:python": "vite build --mode python",
+    "build:csharp": "vite build --mode csharp",
     "lint": "eslint .",
     "preview": "vite preview"
   },

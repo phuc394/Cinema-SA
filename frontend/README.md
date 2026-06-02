@@ -1,5 +1,30 @@
 # React + Vite
 
+## Backend option
+
+Frontend keeps the Python API gateway as the default backend:
+
+```bash
+npm run dev
+```
+
+Run explicitly with the Python gateway:
+
+```bash
+npm run dev:python
+```
+
+Run with the C# gateway:
+
+```bash
+npm run dev:csharp
+```
+
+Gateway URLs are configured by Vite env files:
+
+- `.env.python`: `http://localhost:8080`
+- `.env.csharp`: `http://localhost:8081`
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
