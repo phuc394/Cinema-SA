@@ -891,3 +891,150 @@ Luồng chuẩn để test tính năng Seat Map mới:
 7. Kiểm tra lịch sử và chi tiết booking
 
 Luồng này bám sát cách frontend hiện tại đang hoạt động.
+
+## 10. Test stack C# qua Docker
+
+Phần này dùng cho 2 folder mới:
+
+- `microservices C#`
+- `api_gateway C#`
+
+Các endpoint frontend/Postman vẫn giữ nguyên như stack Python. Khác biệt chính là gateway C# chạy ở port `8081`.
+
+### 10.1 Khởi động stack C#
+
+Từ thư mục gốc project, chạy:
+
+```bash
+docker compose -f "microservices C#/docker-compose.yml" up --build
+```
+
+Khi cần dừng:
+
+```bash
+docker compose -f "microservices C#/docker-compose.yml" down
+```
+
+Nếu muốn reset database C# để test lại từ đầu:
+
+```bash
+docker compose -f "microservices C#/docker-compose.yml" down -v
+docker compose -f "microservices C#/docker-compose.yml" up --build
+```
+
+### 10.2 Cổng của stack C#
+
+- API Gateway C#: `http://localhost:8081`
+- Auth service C#: `http://localhost:5100`
+- Cinema service C#: `http://localhost:5101`
+- Order service C#: `http://localhost:5102`
+- Cinema DB C#: `3317`
+- Order DB C#: `3318`
+- Auth DB C#: `3319`
+
+Stack Python vẫn dùng các cổng cũ:
+
+- API Gateway Python: `http://localhost:8080`
+- Auth service Python: `http://localhost:5000`
+- Cinema service Python: `http://localhost:5001`
+- Order service Python: `http://localhost:5002`
+
+### 10.3 Environment Postman cho C#
+
+Tạo environment mới tên `Cinema-SA C#` hoặc duplicate environment cũ, sau đó đổi:
+
+```text
+BASE_URL=http://localhost:8081
+AUTH_TOKEN=
+MOVIE_ID=1
+SHOWTIME_ID=1
+BOOKING_ID=1
+```
+
+Script lưu token trong tab `Tests` vẫn dùng như cũ:
+
+```javascript
+const json = pm.response.json();
+pm.environment.set("AUTH_TOKEN", json.token);
+```
+
+### 10.4 Kiểm tra gateway C#
+
+```http
+GET http://localhost:8081/health
+```
+
+Kỳ vọng `HTTP 200`:
+
+```json
+{
+  "status": "ok",
+  "services": {
+    "auth": "http://auth_service:5000",
+    "cinema": "http://cinema_service:5000",
+    "order": "http://order_service:5000"
+  }
+}
+```
+
+### 10.5 Chạy lại cùng bộ request
+
+Dùng lại toàn bộ request trong các mục trên, chỉ cần đổi `BASE_URL` thành:
+
+```text
+http://localhost:8081
+```
+
+Các endpoint chính cần test với Docker C#:
+
+1. `GET {{BASE_URL}}/health`
+2. `GET {{BASE_URL}}/cinema/api/movies`
+3. `GET {{BASE_URL}}/cinema/api/movies/{{MOVIE_ID}}`
+4. `GET {{BASE_URL}}/cinema/api/movies/{{MOVIE_ID}}/showtimes`
+5. `POST {{BASE_URL}}/auth/api/auth/register`
+6. `POST {{BASE_URL}}/auth/api/auth/login`
+7. `GET {{BASE_URL}}/cinema/api/showtimes/{{SHOWTIME_ID}}/seats`
+8. `GET {{BASE_URL}}/order/bookings/showtimes/{{SHOWTIME_ID}}/reserved-seats`
+9. `POST {{BASE_URL}}/cinema/api/showtimes/{{SHOWTIME_ID}}/seats/lock`
+10. `POST {{BASE_URL}}/cinema/api/showtimes/{{SHOWTIME_ID}}/seats/release`
+11. `POST {{BASE_URL}}/order/bookings/create_booking`
+12. `GET {{BASE_URL}}/order/bookings/history`
+13. `GET {{BASE_URL}}/order/bookings/{{BOOKING_ID}}`
+
+### 10.6 Chạy frontend với server C#
+
+Python gateway vẫn là mặc định:
+
+```bash
+cd frontend
+npm run dev
+```
+
+Chạy rõ ràng với Python gateway:
+
+```bash
+cd frontend
+npm run dev:python
+```
+
+Chạy với C# gateway:
+
+```bash
+cd frontend
+npm run dev:csharp
+```
+
+Khi build production:
+
+```bash
+cd frontend
+npm run build:python
+npm run build:csharp
+```
+
+### 10.7 Lưu ý khi test song song Python và C#
+
+- Python gateway dùng `8080`, C# gateway dùng `8081`, nên có thể chạy song song.
+- Database volume của C# có suffix `_cs`, không dùng chung data với stack Python.
+- Token của Python và C# không dùng chung. Khi đổi `BASE_URL`, hãy login lại để lấy `AUTH_TOKEN` mới.
+- Nếu register bị trùng email hoặc số điện thoại, đổi email/phone mới hoặc reset volume C# bằng lệnh `down -v`.
